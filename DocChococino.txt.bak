@@ -31,18 +31,17 @@ except ``"`` unless preceded by ``\``.
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in Chococino are the following:
-  | ``boolean`` | ``break`` | ``continue`` | ``else``
-  | ``false`` | ``if`` | ``int`` | ``return``
-  | ``string`` | ``true`` | ``void`` | ``while``
+  | ``boolean`` | ``else`` | ``false`` | ``if``
+  | ``int`` | ``return`` | ``string`` | ``true``
+  | ``void`` | ``while`` |  |
 
 The symbols used in Chococino are the following:
   | ( | ) | & | ,
-  | { | } | ; | [
-  | ] | = | ++ | --
-  | - | ! | && | ||
-  | + | * | / | %
-  | < | <= | > | >=
-  | == | != |  |
+  | { | } | ; | =
+  | ++ | -- | - | !
+  | && | || | + | *
+  | / | % | < | <=
+  | > | >= | == | !=
 
 ===Comments===
 Single-line comments begin with //.There are no multiple-line comments in the grammar.
@@ -68,10 +67,7 @@ All other symbols are terminals.
   | //Stmt// | -> | ``;``
   |  |  **|**  | //Block//
   |  |  **|**  | //Type// //[Item]// ``;``
-  |  |  **|**  | //Type// //Ident// ``[`` //Expr// ``]``
   |  |  **|**  | //Ident// ``=`` //Expr// ``;``
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]`` ``=`` //Expr//
-  |  |  **|**  | //TupL// ``=`` //TupR//
   |  |  **|**  | //Ident// ``++`` ``;``
   |  |  **|**  | //Ident// ``--`` ``;``
   |  |  **|**  | ``return`` //Expr// ``;``
@@ -80,8 +76,6 @@ All other symbols are terminals.
   |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Stmt// ``else`` //Stmt//
   |  |  **|**  | ``while`` ``(`` //Expr// ``)`` //Stmt//
   |  |  **|**  | //Expr// ``;``
-  |  |  **|**  | ``break``
-  |  |  **|**  | ``continue``
   | //Item// | -> | //Ident//
   |  |  **|**  | //Ident// ``=`` //Expr//
   | //[Item]// | -> | //Item//
@@ -99,7 +93,6 @@ All other symbols are terminals.
   |  |  **|**  | ``false``
   |  |  **|**  | //Ident// ``(`` //[Expr]// ``)``
   |  |  **|**  | //String//
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]``
   |  |  **|**  | ``(`` //Expr// ``)``
   | //Expr5// | -> | ``-`` //Expr6//
   |  |  **|**  | ``!`` //Expr6//
@@ -117,20 +110,6 @@ All other symbols are terminals.
   | //[Expr]// | -> | **eps**
   |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
-  | //TupL1// | -> | //Ident//
-  |  |  **|**  | ``(`` //TupL// ``)``
-  | //TupL// | -> | ``(`` //[TupL]// ``)``
-  |  |  **|**  | //TupL1//
-  | //[TupL]// | -> | **eps**
-  |  |  **|**  | //TupL//
-  |  |  **|**  | //TupL// ``,`` //[TupL]//
-  | //TupR1// | -> | //Expr//
-  |  |  **|**  | ``(`` //TupR// ``)``
-  | //TupR// | -> | ``(`` //[TupR]// ``)``
-  |  |  **|**  | //TupR1//
-  | //[TupR]// | -> | **eps**
-  |  |  **|**  | //TupR//
-  |  |  **|**  | //TupR// ``,`` //[TupR]//
   | //AddOp// | -> | ``+``
   |  |  **|**  | ``-``
   | //MulOp// | -> | ``*``

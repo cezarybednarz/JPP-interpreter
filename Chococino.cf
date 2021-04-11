@@ -38,6 +38,8 @@ Ass.       Stmt ::= Ident "=" Expr  ";" ;
 
 ArrAss.    Stmt ::= Ident "[" Expr "]" "=" Expr ;
 
+TupleAss.  Stmt ::= TupL "=" TupR ;
+
 Incr.      Stmt ::= Ident "++"  ";" ;
 
 Decr.      Stmt ::= Ident "--"  ";" ;
@@ -56,7 +58,7 @@ SExp.      Stmt ::= Expr  ";" ;
 
 Break.     Stmt ::= "break" ;
 
-Continue.  Stmt ::= "continue ;
+Continue.  Stmt ::= "continue" ;
 
 -- Types ---------------------------------------------------
 
@@ -105,6 +107,25 @@ EOr.       Expr ::= Expr1 "||" Expr ;
 coercions  Expr 6 ;
 
 separator  Expr "," ;
+
+-- Tuples --------------------------------------------------
+
+TupLId.    TupL1 ::= Ident ;
+
+TupLPar.   TupL ::= "(" [TupL] ")" ;
+
+coercions  TupL 1;
+
+separator  TupL "," ;
+
+
+TupRExpr.  TupR1 ::= Expr ;
+
+TupRPar.   TupR ::= "(" [TupR] ")" ;
+
+coercions  TupR 1 ;
+
+separator  TupR "," ;
 
 -- operators -----------------------------------------------
 

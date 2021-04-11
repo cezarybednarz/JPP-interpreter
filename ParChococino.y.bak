@@ -40,23 +40,19 @@ import LexChococino
   '==' { PT _ (TS _ 19) }
   '>' { PT _ (TS _ 20) }
   '>=' { PT _ (TS _ 21) }
-  '[' { PT _ (TS _ 22) }
-  ']' { PT _ (TS _ 23) }
-  'boolean' { PT _ (TS _ 24) }
-  'break' { PT _ (TS _ 25) }
-  'continue' { PT _ (TS _ 26) }
-  'else' { PT _ (TS _ 27) }
-  'false' { PT _ (TS _ 28) }
-  'if' { PT _ (TS _ 29) }
-  'int' { PT _ (TS _ 30) }
-  'return' { PT _ (TS _ 31) }
-  'string' { PT _ (TS _ 32) }
-  'true' { PT _ (TS _ 33) }
-  'void' { PT _ (TS _ 34) }
-  'while' { PT _ (TS _ 35) }
-  '{' { PT _ (TS _ 36) }
-  '||' { PT _ (TS _ 37) }
-  '}' { PT _ (TS _ 38) }
+  'boolean' { PT _ (TS _ 22) }
+  'else' { PT _ (TS _ 23) }
+  'false' { PT _ (TS _ 24) }
+  'if' { PT _ (TS _ 25) }
+  'int' { PT _ (TS _ 26) }
+  'return' { PT _ (TS _ 27) }
+  'string' { PT _ (TS _ 28) }
+  'true' { PT _ (TS _ 29) }
+  'void' { PT _ (TS _ 30) }
+  'while' { PT _ (TS _ 31) }
+  '{' { PT _ (TS _ 32) }
+  '||' { PT _ (TS _ 33) }
+  '}' { PT _ (TS _ 34) }
   L_Ident  { PT _ (TV _) }
   L_integ  { PT _ (TI _) }
   L_quoted { PT _ (TL _) }
@@ -102,10 +98,7 @@ Stmt :: { (AbsChococino.BNFC'Position, AbsChococino.Stmt) }
 Stmt : ';' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.Empty (uncurry AbsChococino.BNFC'Position (tokenLineCol $1))) }
      | Block { (fst $1, AbsChococino.BStmt (fst $1) (snd $1)) }
      | Type ListItem ';' { (fst $1, AbsChococino.Decl (fst $1) (snd $1) (snd $2)) }
-     | Type Ident '[' Expr ']' { (fst $1, AbsChococino.ArrDecl (fst $1) (snd $1) (snd $2) (snd $4)) }
      | Ident '=' Expr ';' { (fst $1, AbsChococino.Ass (fst $1) (snd $1) (snd $3)) }
-     | Ident '[' Expr ']' '=' Expr { (fst $1, AbsChococino.ArrAss (fst $1) (snd $1) (snd $3) (snd $6)) }
-     | TupL '=' TupR { (fst $1, AbsChococino.TupleAss (fst $1) (snd $1) (snd $3)) }
      | Ident '++' ';' { (fst $1, AbsChococino.Incr (fst $1) (snd $1)) }
      | Ident '--' ';' { (fst $1, AbsChococino.Decr (fst $1) (snd $1)) }
      | 'return' Expr ';' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.Ret (uncurry AbsChococino.BNFC'Position (tokenLineCol $1)) (snd $2)) }
@@ -114,8 +107,6 @@ Stmt : ';' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino
      | 'if' '(' Expr ')' Stmt 'else' Stmt { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.CondElse (uncurry AbsChococino.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $7)) }
      | 'while' '(' Expr ')' Stmt { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.While (uncurry AbsChococino.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
      | Expr ';' { (fst $1, AbsChococino.SExp (fst $1) (snd $1)) }
-     | 'break' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.Break (uncurry AbsChococino.BNFC'Position (tokenLineCol $1))) }
-     | 'continue' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.Continue (uncurry AbsChococino.BNFC'Position (tokenLineCol $1))) }
 
 Item :: { (AbsChococino.BNFC'Position, AbsChococino.Item) }
 Item : Ident { (fst $1, AbsChococino.NoInit (fst $1) (snd $1)) }
@@ -143,7 +134,6 @@ Expr6 : Ident { (fst $1, AbsChococino.EVar (fst $1) (snd $1)) }
       | 'false' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.ELitFalse (uncurry AbsChococino.BNFC'Position (tokenLineCol $1))) }
       | Ident '(' ListExpr ')' { (fst $1, AbsChococino.EApp (fst $1) (snd $1) (snd $3)) }
       | String { (fst $1, AbsChococino.EString (fst $1) (snd $1)) }
-      | Ident '[' Expr ']' { (fst $1, AbsChococino.EArr (fst $1) (snd $1) (snd $3)) }
       | '(' Expr ')' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), (snd $2)) }
 
 Expr5 :: { (AbsChococino.BNFC'Position, AbsChococino.Expr) }
@@ -175,32 +165,6 @@ ListExpr :: { (AbsChococino.BNFC'Position, [AbsChococino.Expr]) }
 ListExpr : {- empty -} { (AbsChococino.BNFC'NoPosition, []) }
          | Expr { (fst $1, (:[]) (snd $1)) }
          | Expr ',' ListExpr { (fst $1, (:) (snd $1) (snd $3)) }
-
-TupL1 :: { (AbsChococino.BNFC'Position, AbsChococino.TupL) }
-TupL1 : Ident { (fst $1, AbsChococino.TupLId (fst $1) (snd $1)) }
-      | '(' TupL ')' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), (snd $2)) }
-
-TupL :: { (AbsChococino.BNFC'Position, AbsChococino.TupL) }
-TupL : '(' ListTupL ')' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.TupLPar (uncurry AbsChococino.BNFC'Position (tokenLineCol $1)) (snd $2)) }
-     | TupL1 { (fst $1, (snd $1)) }
-
-ListTupL :: { (AbsChococino.BNFC'Position, [AbsChococino.TupL]) }
-ListTupL : {- empty -} { (AbsChococino.BNFC'NoPosition, []) }
-         | TupL { (fst $1, (:[]) (snd $1)) }
-         | TupL ',' ListTupL { (fst $1, (:) (snd $1) (snd $3)) }
-
-TupR1 :: { (AbsChococino.BNFC'Position, AbsChococino.TupR) }
-TupR1 : Expr { (fst $1, AbsChococino.TupRExpr (fst $1) (snd $1)) }
-      | '(' TupR ')' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), (snd $2)) }
-
-TupR :: { (AbsChococino.BNFC'Position, AbsChococino.TupR) }
-TupR : '(' ListTupR ')' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.TupRPar (uncurry AbsChococino.BNFC'Position (tokenLineCol $1)) (snd $2)) }
-     | TupR1 { (fst $1, (snd $1)) }
-
-ListTupR :: { (AbsChococino.BNFC'Position, [AbsChococino.TupR]) }
-ListTupR : {- empty -} { (AbsChococino.BNFC'NoPosition, []) }
-         | TupR { (fst $1, (:[]) (snd $1)) }
-         | TupR ',' ListTupR { (fst $1, (:) (snd $1) (snd $3)) }
 
 AddOp :: { (AbsChococino.BNFC'Position, AbsChococino.AddOp) }
 AddOp : '+' { (uncurry AbsChococino.BNFC'Position (tokenLineCol $1), AbsChococino.Plus (uncurry AbsChococino.BNFC'Position (tokenLineCol $1))) }

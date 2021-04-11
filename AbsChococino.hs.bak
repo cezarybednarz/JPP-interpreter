@@ -40,10 +40,7 @@ data Stmt' a
     = Empty a
     | BStmt a (Block' a)
     | Decl a (Type' a) [Item' a]
-    | ArrDecl a (Type' a) Ident (Expr' a)
     | Ass a Ident (Expr' a)
-    | ArrAss a Ident (Expr' a) (Expr' a)
-    | TupleAss a (TupL' a) (TupR' a)
     | Incr a Ident
     | Decr a Ident
     | Ret a (Expr' a)
@@ -52,8 +49,6 @@ data Stmt' a
     | CondElse a (Expr' a) (Stmt' a) (Stmt' a)
     | While a (Expr' a) (Stmt' a)
     | SExp a (Expr' a)
-    | Break a
-    | Continue a
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Item = Item' BNFC'Position
@@ -73,7 +68,6 @@ data Expr' a
     | ELitFalse a
     | EApp a Ident [Expr' a]
     | EString a String
-    | EArr a Ident (Expr' a)
     | Neg a (Expr' a)
     | Not a (Expr' a)
     | EMul a (Expr' a) (MulOp' a) (Expr' a)
@@ -81,14 +75,6 @@ data Expr' a
     | ERel a (Expr' a) (RelOp' a) (Expr' a)
     | EAnd a (Expr' a) (Expr' a)
     | EOr a (Expr' a) (Expr' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
-
-type TupL = TupL' BNFC'Position
-data TupL' a = TupLId a Ident | TupLPar a [TupL' a]
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
-
-type TupR = TupR' BNFC'Position
-data TupR' a = TupRExpr a (Expr' a) | TupRPar a [TupR' a]
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type AddOp = AddOp' BNFC'Position
@@ -143,10 +129,7 @@ instance HasPosition Stmt where
     Empty p -> p
     BStmt p _ -> p
     Decl p _ _ -> p
-    ArrDecl p _ _ _ -> p
     Ass p _ _ -> p
-    ArrAss p _ _ _ -> p
-    TupleAss p _ _ -> p
     Incr p _ -> p
     Decr p _ -> p
     Ret p _ -> p
@@ -155,8 +138,6 @@ instance HasPosition Stmt where
     CondElse p _ _ _ -> p
     While p _ _ -> p
     SExp p _ -> p
-    Break p -> p
-    Continue p -> p
 
 instance HasPosition Item where
   hasPosition = \case
@@ -179,7 +160,6 @@ instance HasPosition Expr where
     ELitFalse p -> p
     EApp p _ _ -> p
     EString p _ -> p
-    EArr p _ _ -> p
     Neg p _ -> p
     Not p _ -> p
     EMul p _ _ _ -> p
@@ -187,16 +167,6 @@ instance HasPosition Expr where
     ERel p _ _ _ -> p
     EAnd p _ _ -> p
     EOr p _ _ -> p
-
-instance HasPosition TupL where
-  hasPosition = \case
-    TupLId p _ -> p
-    TupLPar p _ -> p
-
-instance HasPosition TupR where
-  hasPosition = \case
-    TupRExpr p _ -> p
-    TupRPar p _ -> p
 
 instance HasPosition AddOp where
   hasPosition = \case
