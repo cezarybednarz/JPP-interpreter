@@ -8,7 +8,9 @@ FnDef.	   TopDef ::= Type Ident "(" [Arg] ")" Block ;
 
 separator nonempty TopDef "" ;
 
-Arg. 	   Arg ::= Type Ident;
+ArgNoRef.  Arg ::= Type Ident;
+
+ArgRef.    Arg ::= Type "&" Ident
 
 separator  Arg "," ;
 
@@ -120,8 +122,4 @@ NE.        RelOp ::= "!=" ;
 
 -- comments ------------------------------------------------
 
-comment    "#" ;
-
 comment    "//" ;
-
-comment    "/*" "*/" ;
