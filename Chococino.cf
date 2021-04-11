@@ -8,9 +8,9 @@ FnDef.	   TopDef ::= Type Ident "(" [Arg] ")" Block ;
 
 separator nonempty TopDef "" ;
 
-ArgNoRef.  Arg ::= Type Ident;
+ArgNoRef.  Arg ::= Type Ident ;
 
-ArgRef.    Arg ::= Type "&" Ident
+ArgRef.    Arg ::= Type "&" Ident ; 
 
 separator  Arg "," ;
 
