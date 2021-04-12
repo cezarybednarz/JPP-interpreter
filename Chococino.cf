@@ -70,6 +70,8 @@ Bool.      Type ::= "boolean" ;
 
 Void.      Type ::= "void" ;
 
+Tuple.     Type ::= "tuple" ;
+
 internal   Fun. Type ::= Type "(" [Type] ")" ;
 
 separator  Type "," ;
@@ -110,7 +112,7 @@ separator  Expr "," ;
 
 -- Tuples --------------------------------------------------
 
-TupLId.    TupL1 ::= Ident ;
+TupLId.    TupL ::= Ident ;
 
 TupLPar.   TupL ::= "(" [TupL] ")" ;
 
@@ -119,7 +121,7 @@ coercions  TupL 1;
 separator  TupL "," ;
 
 
-TupRExpr.  TupR1 ::= Expr ;
+TupRExpr.  TupR ::= Expr ;
 
 TupRPar.   TupR ::= "(" [TupR] ")" ;
 

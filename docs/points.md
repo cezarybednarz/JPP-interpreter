@@ -15,7 +15,7 @@
   12 (4) (statyczne typowanie)
   - 13 (2) (funkcje zagnieżdżone ze statycznym wiązaniem)
   + 14 (1) (rekordy/tablice/listy)
-  - 15 (2) (krotki z przypisaniem)
+  + 15 (2) (krotki z przypisaniem)
   + 16 (1) (break, continue)
   - 17 (4) (funkcje wyższego rzędu, anonimowe, domknięcia)
   18 (3) (generatory)
