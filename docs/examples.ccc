@@ -93,9 +93,10 @@ int main() {
 
     int i = 0;
     while (i <= 100) {
-        if (maks > apply(x, f)) {
-            maks = apply(x, f);
+        if (maks > apply(i, f)) {
+            maks = apply(i, f);
         }
+        i++;
     }
 
     printInt(maks);

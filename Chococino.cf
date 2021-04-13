@@ -74,6 +74,8 @@ Void.      Type ::= "void" ;
 
 Tuple.     Type ::= "tuple" ;
 
+Function.  Type ::= "function" "<" Type "(" [Type] ")" ">"
+
 internal   Fun. Type ::= Type "(" [Type] ")" ;
 
 separator  Type "," ;
@@ -83,6 +85,10 @@ separator  Type "," ;
 EVar.      Expr6 ::= Ident ;
 
 ELitInt.   Expr6 ::= Integer ;
+
+ELitTuple. Expr6 ::= TupR ;
+
+ELitLambd. Expr6 ::= Lambda ;
 
 ELitTrue.  Expr6 ::= "true" ;
 
@@ -130,6 +136,16 @@ TupRPar.   TupR ::= "(" [TupR] ")" ;
 coercions  TupR 1 ;
 
 separator  TupR "," ;
+
+-- Lambdas -------------------------------------------------
+
+LambdaId.  Lambda ::= Ident ;
+
+LambdaDef. Lambda ::= "(" [Ident] ")" "->" Block ;
+
+coercions  Lambda 1 ;
+
+separator  Lambda "," ;
 
 -- operators -----------------------------------------------
 
