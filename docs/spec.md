@@ -2,7 +2,7 @@
 ##### Cezary Bednarz (406099)
 
 ### A) Gramatyka języka
-Gramatyka języka bez definicji struktury programu i operatorów, bo są one standardowe. Jest to rozszerzona gramatyka [Latte](https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2020/Latte/).
+Gramatyka języka podaję bez definicji struktury programu i operatorów, bo są one standardowe. Jest to rozszerzona gramatyka [Latte](https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2020/Latte/).
 ```hs
 -- statements ----------------------------------------------
 Block.     Block ::= "{" [Stmt] "}" ;
@@ -167,13 +167,16 @@ int main() {
 ```
 
 ### C) Opis języka
-Język gramatycznie jest oparty na podanej gramatyce języka [Latte](https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2020/Latte/)
-Są dostępne predefiniowane funkcje:
- - `void printInt(int)`
- - `void printString(string`
- - `void error(string)`
-
-Funkcja error wypisuje runtime error oraz podany string i kończy wykonywanie programu.
+ - Język gramatycznie jest oparty na podanej gramatyce języka [Latte](https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2020/Latte/), więc jest podobny do Javy
+ - Są dostępne predefiniowane funkcje:
+     - `void printInt(int)`
+     - `void printString(string`
+     - `void error(string)` - wypisuje 'runtime error' oraz podany string i kończy interpreter
+ -  funkcje można definiować w środku innych funkcji tak samo jak definiuje się je normalnie, trzeba tylko dodać średnik na końcu definicji
+ -  dostępne są lambdy takie jak w javie, na przykład: `(x, y) -> { x += y; return 3*x + y; }`
+ -  żeby przekazać funkcję jako parametr musimy użyć składni jak `std::function` w C++: na przykład: `function<int(string, string)> f`, co znaczy że funkcja f zwraca `int` i przyjmuje dwa argumenty `string`
+ -  dostępne są również tablice, takie jak w C, tylko przypisanie może odbywać się tylko element po elemencie: np. `t[3] = 2`
+ -  dostępne są krotki, które mogą być argumentami funkcji, typem zwracanym i mogą być uzywane do przypisywania jak w Pythonie: `int x; int y; (x, y) = (3, 33)`
 
 
 ### D) Tabelka funkcjonalności
