@@ -104,7 +104,7 @@ Stmt : ';' { Chococino.Abs.Empty }
      | Type ListItem ';' { Chococino.Abs.Decl $1 $2 }
      | Type Ident '[' Expr ']' { Chococino.Abs.ArrDecl $1 $2 $4 }
      | Ident '=' Expr ';' { Chococino.Abs.Ass $1 $3 }
-     | Ident '[' Expr ']' '=' Expr { Chococino.Abs.ArrAss $1 $3 $6 }
+     | ArrExpr '=' Expr ';' { Chococino.Abs.ArrAss $1 $3 }
      | Ident '++' ';' { Chococino.Abs.Incr $1 }
      | Ident '--' ';' { Chococino.Abs.Decr $1 }
      | 'return' Expr ';' { Chococino.Abs.Ret $2 }
@@ -136,15 +136,18 @@ ListType : {- empty -} { [] }
          | Type { (:[]) $1 }
          | Type ',' ListType { (:) $1 $3 }
 
+ArrExpr :: { Chococino.Abs.ArrExpr }
+ArrExpr : Ident '[' Expr ']' { Chococino.Abs.FirstDim $1 $3 }
+        | ArrExpr '[' Expr ']' { Chococino.Abs.MultDim $1 $3 }
+
 Expr6 :: { Chococino.Abs.Expr }
 Expr6 : Ident { Chococino.Abs.EVar $1 }
       | Integer { Chococino.Abs.ELitInt $1 }
-      | Lambda { Chococino.Abs.ELitLambd $1 }
       | 'true' { Chococino.Abs.ELitTrue }
       | 'false' { Chococino.Abs.ELitFalse }
       | Ident '(' ListExpr ')' { Chococino.Abs.EApp $1 $3 }
       | String { Chococino.Abs.EString $1 }
-      | Ident '[' Expr ']' { Chococino.Abs.EArr $1 $3 }
+      | ArrExpr { Chococino.Abs.EArr $1 }
       | '(' Expr ')' { $2 }
 
 Expr5 :: { Chococino.Abs.Expr }
@@ -169,7 +172,9 @@ Expr1 : Expr2 '&&' Expr1 { Chococino.Abs.EAnd $1 $3 }
       | Expr2 { $1 }
 
 Expr :: { Chococino.Abs.Expr }
-Expr : Expr1 '||' Expr { Chococino.Abs.EOr $1 $3 } | Expr1 { $1 }
+Expr : Expr1 '||' Expr { Chococino.Abs.EOr $1 $3 }
+     | Lambda { Chococino.Abs.ELambda $1 }
+     | Expr1 { $1 }
 
 ListExpr :: { [Chococino.Abs.Expr] }
 ListExpr : {- empty -} { [] }
@@ -178,15 +183,6 @@ ListExpr : {- empty -} { [] }
 
 Lambda :: { Chococino.Abs.Lambda }
 Lambda : 'lambda' '<' Type '(' ListArg ')' '>' Block { Chococino.Abs.LambdaDef $3 $5 $8 }
-       | Lambda1 { $1 }
-
-Lambda1 :: { Chococino.Abs.Lambda }
-Lambda1 : '(' Lambda ')' { $2 }
-
-ListLambda :: { [Chococino.Abs.Lambda] }
-ListLambda : {- empty -} { [] }
-           | Lambda { (:[]) $1 }
-           | Lambda ',' ListLambda { (:) $1 $3 }
 
 AddOp :: { Chococino.Abs.AddOp }
 AddOp : '+' { Chococino.Abs.Plus } | '-' { Chococino.Abs.Minus }

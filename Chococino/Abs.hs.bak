@@ -53,7 +53,6 @@ data Type
 data Expr
     = EVar Ident
     | ELitInt Integer
-    | ELitLambd Lambda
     | ELitTrue
     | ELitFalse
     | EApp Ident [Expr]
@@ -66,9 +65,10 @@ data Expr
     | ERel Expr RelOp Expr
     | EAnd Expr Expr
     | EOr Expr Expr
+    | ELambda Lambda
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Lambda = LambdaId Ident | LambdaDef Type [Arg] Block
+data Lambda = LambdaDef Type [Arg] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data AddOp = Plus | Minus

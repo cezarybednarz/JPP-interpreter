@@ -72,7 +72,6 @@ transExpr :: Chococino.Abs.Expr -> Result
 transExpr x = case x of
   Chococino.Abs.EVar ident -> failure x
   Chococino.Abs.ELitInt integer -> failure x
-  Chococino.Abs.ELitLambd lambda -> failure x
   Chococino.Abs.ELitTrue -> failure x
   Chococino.Abs.ELitFalse -> failure x
   Chococino.Abs.EApp ident exprs -> failure x
@@ -85,10 +84,10 @@ transExpr x = case x of
   Chococino.Abs.ERel expr1 relop expr2 -> failure x
   Chococino.Abs.EAnd expr1 expr2 -> failure x
   Chococino.Abs.EOr expr1 expr2 -> failure x
+  Chococino.Abs.ELambda lambda -> failure x
 
 transLambda :: Chococino.Abs.Lambda -> Result
 transLambda x = case x of
-  Chococino.Abs.LambdaId ident -> failure x
   Chococino.Abs.LambdaDef type_ args block -> failure x
 
 transAddOp :: Chococino.Abs.AddOp -> Result

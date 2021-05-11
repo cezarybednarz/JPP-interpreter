@@ -29,7 +29,7 @@ data Stmt
     | Decl Type [Item]
     | ArrDecl Type Ident Expr
     | Ass Ident Expr
-    | ArrAss Ident Expr Expr
+    | ArrAss ArrExpr Expr
     | Incr Ident
     | Decr Ident
     | Ret Expr
@@ -50,15 +50,17 @@ data Type
     = Int | Str | Bool | Void | Function Type [Type] | Fun Type [Type]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
+data ArrExpr = FirstDim Ident Expr | MultDim ArrExpr Expr
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
 data Expr
     = EVar Ident
     | ELitInt Integer
-    | ELitLambd Lambda
     | ELitTrue
     | ELitFalse
     | EApp Ident [Expr]
     | EString String
-    | EArr Ident Expr
+    | EArr ArrExpr
     | Neg Expr
     | Not Expr
     | EMul Expr MulOp Expr
@@ -66,6 +68,7 @@ data Expr
     | ERel Expr RelOp Expr
     | EAnd Expr Expr
     | EOr Expr Expr
+    | ELambda Lambda
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Lambda = LambdaDef Type [Arg] Block

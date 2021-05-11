@@ -97,7 +97,6 @@ All other symbols are terminals.
   |  |  **|**  | //Type// ``,`` //[Type]//
   | //Expr6// | -> | //Ident//
   |  |  **|**  | //Integer//
-  |  |  **|**  | //Lambda//
   |  |  **|**  | ``true``
   |  |  **|**  | ``false``
   |  |  **|**  | //Ident// ``(`` //[Expr]// ``)``
@@ -116,17 +115,12 @@ All other symbols are terminals.
   | //Expr1// | -> | //Expr2// ``&&`` //Expr1//
   |  |  **|**  | //Expr2//
   | //Expr// | -> | //Expr1// ``||`` //Expr//
+  |  |  **|**  | //Lambda//
   |  |  **|**  | //Expr1//
   | //[Expr]// | -> | **eps**
   |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
-  | //Lambda// | -> | //Ident//
-  |  |  **|**  | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
-  |  |  **|**  | //Lambda1//
-  | //Lambda1// | -> | ``(`` //Lambda// ``)``
-  | //[Lambda]// | -> | **eps**
-  |  |  **|**  | //Lambda//
-  |  |  **|**  | //Lambda// ``,`` //[Lambda]//
+  | //Lambda// | -> | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
   | //AddOp// | -> | ``+``
   |  |  **|**  | ``-``
   | //MulOp// | -> | ``*``

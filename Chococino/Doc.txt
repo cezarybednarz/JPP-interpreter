@@ -71,7 +71,7 @@ All other symbols are terminals.
   |  |  **|**  | //Type// //[Item]// ``;``
   |  |  **|**  | //Type// //Ident// ``[`` //Expr// ``]``
   |  |  **|**  | //Ident// ``=`` //Expr// ``;``
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]`` ``=`` //Expr//
+  |  |  **|**  | //ArrExpr// ``=`` //Expr// ``;``
   |  |  **|**  | //Ident// ``++`` ``;``
   |  |  **|**  | //Ident// ``--`` ``;``
   |  |  **|**  | ``return`` //Expr// ``;``
@@ -95,14 +95,15 @@ All other symbols are terminals.
   | //[Type]// | -> | **eps**
   |  |  **|**  | //Type//
   |  |  **|**  | //Type// ``,`` //[Type]//
+  | //ArrExpr// | -> | //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //ArrExpr// ``[`` //Expr// ``]``
   | //Expr6// | -> | //Ident//
   |  |  **|**  | //Integer//
-  |  |  **|**  | //Lambda//
   |  |  **|**  | ``true``
   |  |  **|**  | ``false``
   |  |  **|**  | //Ident// ``(`` //[Expr]// ``)``
   |  |  **|**  | //String//
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //ArrExpr//
   |  |  **|**  | ``(`` //Expr// ``)``
   | //Expr5// | -> | ``-`` //Expr6//
   |  |  **|**  | ``!`` //Expr6//
@@ -116,16 +117,12 @@ All other symbols are terminals.
   | //Expr1// | -> | //Expr2// ``&&`` //Expr1//
   |  |  **|**  | //Expr2//
   | //Expr// | -> | //Expr1// ``||`` //Expr//
+  |  |  **|**  | //Lambda//
   |  |  **|**  | //Expr1//
   | //[Expr]// | -> | **eps**
   |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
   | //Lambda// | -> | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
-  |  |  **|**  | //Lambda1//
-  | //Lambda1// | -> | ``(`` //Lambda// ``)``
-  | //[Lambda]// | -> | **eps**
-  |  |  **|**  | //Lambda//
-  |  |  **|**  | //Lambda// ``,`` //[Lambda]//
   | //AddOp// | -> | ``+``
   |  |  **|**  | ``-``
   | //MulOp// | -> | ``*``

@@ -20,7 +20,7 @@ NoInit.    Item ::= Ident ;
 Init.      Item ::= Ident "=" Expr ;
 separator nonempty Item "," ;
 Ass.       Stmt ::= Ident "=" Expr  ";" ;
-ArrAss.    Stmt ::= Ident "[" Expr "]" "=" Expr ;
+ArrAss.    Stmt ::= ArrExpr "=" Expr ";" ;
 Incr.      Stmt ::= Ident "++"  ";" ;
 Decr.      Stmt ::= Ident "--"  ";" ;
 Ret.       Stmt ::= "return" Expr ";" ;
@@ -42,16 +42,19 @@ Function.  Type ::= "function" "<" Type "(" [Type] ")" ">" ;
 internal   Fun. Type ::= Type "(" [Type] ")" ;
 separator  Type "," ;
 
+-- Arrays --------------------------------------------------
+FirstDim.  ArrExpr ::= Ident "[" Expr "]" ;
+MultDim.   ArrExpr ::= ArrExpr "[" Expr "]" ;
+
 -- Expressions ---------------------------------------------
 
 EVar.      Expr6 ::= Ident ;
 ELitInt.   Expr6 ::= Integer ;
-ELitLambd. Expr6 ::= Lambda ;
 ELitTrue.  Expr6 ::= "true" ;
 ELitFalse. Expr6 ::= "false" ;
 EApp.      Expr6 ::= Ident "(" [Expr] ")" ;
 EString.   Expr6 ::= String ;
-EArr.      Expr6 ::= Ident "[" Expr "]" ;
+EArr.      Expr6 ::= ArrExpr ;
 Neg.       Expr5 ::= "-" Expr6 ;
 Not.       Expr5 ::= "!" Expr6 ;
 EMul.      Expr4 ::= Expr4 MulOp Expr5 ;
@@ -59,14 +62,13 @@ EAdd.      Expr3 ::= Expr3 AddOp Expr4 ;
 ERel.      Expr2 ::= Expr2 RelOp Expr3 ;
 EAnd.      Expr1 ::= Expr2 "&&" Expr1 ;
 EOr.       Expr ::= Expr1 "||" Expr ;
+ELambda.   Expr ::= Lambda ;
 coercions  Expr 6 ;
 separator  Expr "," ;
 
 -- Lambdas -------------------------------------------------
 
 LambdaDef. Lambda ::= "lambda" "<" Type "(" [Arg] ")" ">" Block ;
-coercions  Lambda 1 ;
-separator  Lambda "," ;
 
 -- operators -----------------------------------------------
 

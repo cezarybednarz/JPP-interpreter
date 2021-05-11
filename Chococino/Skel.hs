@@ -41,7 +41,7 @@ transStmt x = case x of
   Chococino.Abs.Decl type_ items -> failure x
   Chococino.Abs.ArrDecl type_ ident expr -> failure x
   Chococino.Abs.Ass ident expr -> failure x
-  Chococino.Abs.ArrAss ident expr1 expr2 -> failure x
+  Chococino.Abs.ArrAss arrexpr expr -> failure x
   Chococino.Abs.Incr ident -> failure x
   Chococino.Abs.Decr ident -> failure x
   Chococino.Abs.Ret expr -> failure x
@@ -68,16 +68,20 @@ transType x = case x of
   Chococino.Abs.Function type_ types -> failure x
   Chococino.Abs.Fun type_ types -> failure x
 
+transArrExpr :: Chococino.Abs.ArrExpr -> Result
+transArrExpr x = case x of
+  Chococino.Abs.FirstDim ident expr -> failure x
+  Chococino.Abs.MultDim arrexpr expr -> failure x
+
 transExpr :: Chococino.Abs.Expr -> Result
 transExpr x = case x of
   Chococino.Abs.EVar ident -> failure x
   Chococino.Abs.ELitInt integer -> failure x
-  Chococino.Abs.ELitLambd lambda -> failure x
   Chococino.Abs.ELitTrue -> failure x
   Chococino.Abs.ELitFalse -> failure x
   Chococino.Abs.EApp ident exprs -> failure x
   Chococino.Abs.EString string -> failure x
-  Chococino.Abs.EArr ident expr -> failure x
+  Chococino.Abs.EArr arrexpr -> failure x
   Chococino.Abs.Neg expr -> failure x
   Chococino.Abs.Not expr -> failure x
   Chococino.Abs.EMul expr1 mulop expr2 -> failure x
@@ -85,6 +89,7 @@ transExpr x = case x of
   Chococino.Abs.ERel expr1 relop expr2 -> failure x
   Chococino.Abs.EAnd expr1 expr2 -> failure x
   Chococino.Abs.EOr expr1 expr2 -> failure x
+  Chococino.Abs.ELambda lambda -> failure x
 
 transLambda :: Chococino.Abs.Lambda -> Result
 transLambda x = case x of

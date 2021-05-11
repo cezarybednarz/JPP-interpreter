@@ -148,7 +148,7 @@ instance Print Chococino.Abs.Stmt where
     Chococino.Abs.Decl type_ items -> prPrec i 0 (concatD [prt 0 type_, prt 0 items, doc (showString ";")])
     Chococino.Abs.ArrDecl type_ id_ expr -> prPrec i 0 (concatD [prt 0 type_, prt 0 id_, doc (showString "["), prt 0 expr, doc (showString "]")])
     Chococino.Abs.Ass id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString "="), prt 0 expr, doc (showString ";")])
-    Chococino.Abs.ArrAss id_ expr1 expr2 -> prPrec i 0 (concatD [prt 0 id_, doc (showString "["), prt 0 expr1, doc (showString "]"), doc (showString "="), prt 0 expr2])
+    Chococino.Abs.ArrAss arrexpr expr -> prPrec i 0 (concatD [prt 0 arrexpr, doc (showString "="), prt 0 expr, doc (showString ";")])
     Chococino.Abs.Incr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "++"), doc (showString ";")])
     Chococino.Abs.Decr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "--"), doc (showString ";")])
     Chococino.Abs.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
@@ -188,16 +188,20 @@ instance Print Chococino.Abs.Type where
 instance Print [Chococino.Abs.Type] where
   prt = prtList
 
+instance Print Chococino.Abs.ArrExpr where
+  prt i = \case
+    Chococino.Abs.FirstDim id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString "["), prt 0 expr, doc (showString "]")])
+    Chococino.Abs.MultDim arrexpr expr -> prPrec i 0 (concatD [prt 0 arrexpr, doc (showString "["), prt 0 expr, doc (showString "]")])
+
 instance Print Chococino.Abs.Expr where
   prt i = \case
     Chococino.Abs.EVar id_ -> prPrec i 6 (concatD [prt 0 id_])
     Chococino.Abs.ELitInt n -> prPrec i 6 (concatD [prt 0 n])
-    Chococino.Abs.ELitLambd lambda -> prPrec i 6 (concatD [prt 0 lambda])
     Chococino.Abs.ELitTrue -> prPrec i 6 (concatD [doc (showString "true")])
     Chococino.Abs.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
     Chococino.Abs.EApp id_ exprs -> prPrec i 6 (concatD [prt 0 id_, doc (showString "("), prt 0 exprs, doc (showString ")")])
     Chococino.Abs.EString str -> prPrec i 6 (concatD [prt 0 str])
-    Chococino.Abs.EArr id_ expr -> prPrec i 6 (concatD [prt 0 id_, doc (showString "["), prt 0 expr, doc (showString "]")])
+    Chococino.Abs.EArr arrexpr -> prPrec i 6 (concatD [prt 0 arrexpr])
     Chococino.Abs.Neg expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
     Chococino.Abs.Not expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])
     Chococino.Abs.EMul expr1 mulop expr2 -> prPrec i 4 (concatD [prt 4 expr1, prt 0 mulop, prt 5 expr2])
@@ -205,6 +209,7 @@ instance Print Chococino.Abs.Expr where
     Chococino.Abs.ERel expr1 relop expr2 -> prPrec i 2 (concatD [prt 2 expr1, prt 0 relop, prt 3 expr2])
     Chococino.Abs.EAnd expr1 expr2 -> prPrec i 1 (concatD [prt 2 expr1, doc (showString "&&"), prt 1 expr2])
     Chococino.Abs.EOr expr1 expr2 -> prPrec i 0 (concatD [prt 1 expr1, doc (showString "||"), prt 0 expr2])
+    Chococino.Abs.ELambda lambda -> prPrec i 0 (concatD [prt 0 lambda])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
@@ -215,12 +220,6 @@ instance Print [Chococino.Abs.Expr] where
 instance Print Chococino.Abs.Lambda where
   prt i = \case
     Chococino.Abs.LambdaDef type_ args block -> prPrec i 0 (concatD [doc (showString "lambda"), doc (showString "<"), prt 0 type_, doc (showString "("), prt 0 args, doc (showString ")"), doc (showString ">"), prt 0 block])
-  prtList _ [] = concatD []
-  prtList _ [x] = concatD [prt 0 x]
-  prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
-
-instance Print [Chococino.Abs.Lambda] where
-  prt = prtList
 
 instance Print Chococino.Abs.AddOp where
   prt i = \case
