@@ -120,7 +120,8 @@ All other symbols are terminals.
   | //[Expr]// | -> | **eps**
   |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
-  | //Lambda// | -> | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
+  | //Lambda// | -> | //Ident//
+  |  |  **|**  | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
   |  |  **|**  | //Lambda1//
   | //Lambda1// | -> | ``(`` //Lambda// ``)``
   | //[Lambda]// | -> | **eps**

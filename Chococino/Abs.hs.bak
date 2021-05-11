@@ -68,7 +68,7 @@ data Expr
     | EOr Expr Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Lambda = LambdaDef Type [Arg] Block
+data Lambda = LambdaId Ident | LambdaDef Type [Arg] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data AddOp = Plus | Minus

@@ -64,8 +64,7 @@ separator  Expr "," ;
 
 -- Lambdas -------------------------------------------------
 
-LambdaId.  Lambda ::= Ident ;
-LambdaDef. Lambda ::= lambda "<" Type "(" [Arg] ")" ">" Block ;
+LambdaDef. Lambda ::= "lambda" "<" Type "(" [Arg] ")" ">" Block ;
 coercions  Lambda 1 ;
 separator  Lambda "," ;
 

@@ -88,6 +88,7 @@ transExpr x = case x of
 
 transLambda :: Chococino.Abs.Lambda -> Result
 transLambda x = case x of
+  Chococino.Abs.LambdaId ident -> failure x
   Chococino.Abs.LambdaDef type_ args block -> failure x
 
 transAddOp :: Chococino.Abs.AddOp -> Result
