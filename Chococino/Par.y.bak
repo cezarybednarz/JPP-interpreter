@@ -111,8 +111,8 @@ Stmt : ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.A
      | Ident '--' ';' { (fst $1, Chococino.Abs.Decr (fst $1) (snd $1)) }
      | 'return' Expr ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Ret (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
      | 'return' ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.VRet (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
-     | 'if' '(' Expr ')' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Cond (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
-     | 'if' '(' Expr ')' Stmt 'else' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.CondElse (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $7)) }
+     | 'if' '(' Expr ')' Block { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Cond (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
+     | 'if' '(' Expr ')' Block 'else' Block { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.CondElse (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $7)) }
      | 'while' '(' Expr ')' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.While (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
      | Expr ';' { (fst $1, Chococino.Abs.SExp (fst $1) (snd $1)) }
      | 'break' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Break (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }

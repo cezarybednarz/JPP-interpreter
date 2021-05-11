@@ -17,100 +17,100 @@ transIdent :: Chococino.Abs.Ident -> Result
 transIdent x = case x of
   Chococino.Abs.Ident string -> failure x
 
-transProgram :: Show a => Chococino.Abs.Program' a -> Result
+transProgram :: Chococino.Abs.Program -> Result
 transProgram x = case x of
-  Chococino.Abs.Program _ topdefs -> failure x
+  Chococino.Abs.Program topdefs -> failure x
 
-transTopDef :: Show a => Chococino.Abs.TopDef' a -> Result
+transTopDef :: Chococino.Abs.TopDef -> Result
 transTopDef x = case x of
-  Chococino.Abs.FnDef _ type_ ident args block -> failure x
+  Chococino.Abs.FnDef type_ ident args block -> failure x
 
-transArg :: Show a => Chococino.Abs.Arg' a -> Result
+transArg :: Chococino.Abs.Arg -> Result
 transArg x = case x of
-  Chococino.Abs.ArgNoRef _ type_ ident -> failure x
-  Chococino.Abs.ArgRef _ type_ ident -> failure x
+  Chococino.Abs.ArgNoRef type_ ident -> failure x
+  Chococino.Abs.ArgRef type_ ident -> failure x
 
-transBlock :: Show a => Chococino.Abs.Block' a -> Result
+transBlock :: Chococino.Abs.Block -> Result
 transBlock x = case x of
-  Chococino.Abs.Block _ stmts -> failure x
+  Chococino.Abs.Block stmts -> failure x
 
-transStmt :: Show a => Chococino.Abs.Stmt' a -> Result
+transStmt :: Chococino.Abs.Stmt -> Result
 transStmt x = case x of
-  Chococino.Abs.Empty _ -> failure x
-  Chococino.Abs.BStmt _ block -> failure x
-  Chococino.Abs.Decl _ type_ items -> failure x
-  Chococino.Abs.ArrDecl _ type_ arrexpr -> failure x
-  Chococino.Abs.Ass _ ident expr -> failure x
-  Chococino.Abs.ArrAss _ arrexpr expr -> failure x
-  Chococino.Abs.Incr _ ident -> failure x
-  Chococino.Abs.Decr _ ident -> failure x
-  Chococino.Abs.Ret _ expr -> failure x
-  Chococino.Abs.VRet _ -> failure x
-  Chococino.Abs.Cond _ expr block -> failure x
-  Chococino.Abs.CondElse _ expr block1 block2 -> failure x
-  Chococino.Abs.While _ expr stmt -> failure x
-  Chococino.Abs.SExp _ expr -> failure x
-  Chococino.Abs.Break _ -> failure x
-  Chococino.Abs.Continue _ -> failure x
-  Chococino.Abs.FnNestDef _ topdef -> failure x
+  Chococino.Abs.Empty -> failure x
+  Chococino.Abs.BStmt block -> failure x
+  Chococino.Abs.Decl type_ items -> failure x
+  Chococino.Abs.ArrDecl type_ arrexpr -> failure x
+  Chococino.Abs.Ass ident expr -> failure x
+  Chococino.Abs.ArrAss arrexpr expr -> failure x
+  Chococino.Abs.Incr ident -> failure x
+  Chococino.Abs.Decr ident -> failure x
+  Chococino.Abs.Ret expr -> failure x
+  Chococino.Abs.VRet -> failure x
+  Chococino.Abs.Cond expr block -> failure x
+  Chococino.Abs.CondElse expr block1 block2 -> failure x
+  Chococino.Abs.While expr stmt -> failure x
+  Chococino.Abs.SExp expr -> failure x
+  Chococino.Abs.Break -> failure x
+  Chococino.Abs.Continue -> failure x
+  Chococino.Abs.FnNestDef topdef -> failure x
 
-transItem :: Show a => Chococino.Abs.Item' a -> Result
+transItem :: Chococino.Abs.Item -> Result
 transItem x = case x of
-  Chococino.Abs.NoInit _ ident -> failure x
-  Chococino.Abs.Init _ ident expr -> failure x
+  Chococino.Abs.NoInit ident -> failure x
+  Chococino.Abs.Init ident expr -> failure x
 
-transType :: Show a => Chococino.Abs.Type' a -> Result
+transType :: Chococino.Abs.Type -> Result
 transType x = case x of
-  Chococino.Abs.Int _ -> failure x
-  Chococino.Abs.Str _ -> failure x
-  Chococino.Abs.Bool _ -> failure x
-  Chococino.Abs.Void _ -> failure x
-  Chococino.Abs.Function _ type_ types -> failure x
-  Chococino.Abs.Fun _ type_ types -> failure x
+  Chococino.Abs.Int -> failure x
+  Chococino.Abs.Str -> failure x
+  Chococino.Abs.Bool -> failure x
+  Chococino.Abs.Void -> failure x
+  Chococino.Abs.Function type_ types -> failure x
+  Chococino.Abs.Fun type_ types -> failure x
 
-transArrExpr :: Show a => Chococino.Abs.ArrExpr' a -> Result
+transArrExpr :: Chococino.Abs.ArrExpr -> Result
 transArrExpr x = case x of
-  Chococino.Abs.FirstDim _ ident expr -> failure x
-  Chococino.Abs.MultDim _ arrexpr expr -> failure x
+  Chococino.Abs.FirstDim ident expr -> failure x
+  Chococino.Abs.MultDim arrexpr expr -> failure x
 
-transExpr :: Show a => Chococino.Abs.Expr' a -> Result
+transExpr :: Chococino.Abs.Expr -> Result
 transExpr x = case x of
-  Chococino.Abs.EVar _ ident -> failure x
-  Chococino.Abs.ELitInt _ integer -> failure x
-  Chococino.Abs.ELitTrue _ -> failure x
-  Chococino.Abs.ELitFalse _ -> failure x
-  Chococino.Abs.EApp _ ident exprs -> failure x
-  Chococino.Abs.EString _ string -> failure x
-  Chococino.Abs.EArr _ arrexpr -> failure x
-  Chococino.Abs.Neg _ expr -> failure x
-  Chococino.Abs.Not _ expr -> failure x
-  Chococino.Abs.EMul _ expr1 mulop expr2 -> failure x
-  Chococino.Abs.EAdd _ expr1 addop expr2 -> failure x
-  Chococino.Abs.ERel _ expr1 relop expr2 -> failure x
-  Chococino.Abs.EAnd _ expr1 expr2 -> failure x
-  Chococino.Abs.EOr _ expr1 expr2 -> failure x
-  Chococino.Abs.ELambda _ lambda -> failure x
+  Chococino.Abs.EVar ident -> failure x
+  Chococino.Abs.ELitInt integer -> failure x
+  Chococino.Abs.ELitTrue -> failure x
+  Chococino.Abs.ELitFalse -> failure x
+  Chococino.Abs.EApp ident exprs -> failure x
+  Chococino.Abs.EString string -> failure x
+  Chococino.Abs.EArr arrexpr -> failure x
+  Chococino.Abs.Neg expr -> failure x
+  Chococino.Abs.Not expr -> failure x
+  Chococino.Abs.EMul expr1 mulop expr2 -> failure x
+  Chococino.Abs.EAdd expr1 addop expr2 -> failure x
+  Chococino.Abs.ERel expr1 relop expr2 -> failure x
+  Chococino.Abs.EAnd expr1 expr2 -> failure x
+  Chococino.Abs.EOr expr1 expr2 -> failure x
+  Chococino.Abs.ELambda lambda -> failure x
 
-transLambda :: Show a => Chococino.Abs.Lambda' a -> Result
+transLambda :: Chococino.Abs.Lambda -> Result
 transLambda x = case x of
-  Chococino.Abs.LambdaDef _ type_ args block -> failure x
+  Chococino.Abs.LambdaDef type_ args block -> failure x
 
-transAddOp :: Show a => Chococino.Abs.AddOp' a -> Result
+transAddOp :: Chococino.Abs.AddOp -> Result
 transAddOp x = case x of
-  Chococino.Abs.Plus _ -> failure x
-  Chococino.Abs.Minus _ -> failure x
+  Chococino.Abs.Plus -> failure x
+  Chococino.Abs.Minus -> failure x
 
-transMulOp :: Show a => Chococino.Abs.MulOp' a -> Result
+transMulOp :: Chococino.Abs.MulOp -> Result
 transMulOp x = case x of
-  Chococino.Abs.Times _ -> failure x
-  Chococino.Abs.Div _ -> failure x
-  Chococino.Abs.Mod _ -> failure x
+  Chococino.Abs.Times -> failure x
+  Chococino.Abs.Div -> failure x
+  Chococino.Abs.Mod -> failure x
 
-transRelOp :: Show a => Chococino.Abs.RelOp' a -> Result
+transRelOp :: Chococino.Abs.RelOp -> Result
 transRelOp x = case x of
-  Chococino.Abs.LTH _ -> failure x
-  Chococino.Abs.LE _ -> failure x
-  Chococino.Abs.GTH _ -> failure x
-  Chococino.Abs.GE _ -> failure x
-  Chococino.Abs.EQU _ -> failure x
-  Chococino.Abs.NE _ -> failure x
+  Chococino.Abs.LTH -> failure x
+  Chococino.Abs.LE -> failure x
+  Chococino.Abs.GTH -> failure x
+  Chococino.Abs.GE -> failure x
+  Chococino.Abs.EQU -> failure x
+  Chococino.Abs.NE -> failure x

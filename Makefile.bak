@@ -17,7 +17,7 @@ all : Chococino/Test
 # Rules for building the parser.
 
 Chococino/Abs.hs Chococino/Lex.x Chococino/Par.y Chococino/Print.hs Chococino/Test.hs : Chococino.cf
-	bnfc --haskell -d Chococino.cf
+	bnfc --haskell -d --functor Chococino.cf
 
 %.hs : %.y
 	${HAPPY} ${HAPPY_OPTS} $<

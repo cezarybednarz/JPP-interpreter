@@ -46,8 +46,8 @@ transStmt x = case x of
   Chococino.Abs.Decr _ ident -> failure x
   Chococino.Abs.Ret _ expr -> failure x
   Chococino.Abs.VRet _ -> failure x
-  Chococino.Abs.Cond _ expr stmt -> failure x
-  Chococino.Abs.CondElse _ expr stmt1 stmt2 -> failure x
+  Chococino.Abs.Cond _ expr block -> failure x
+  Chococino.Abs.CondElse _ expr block1 block2 -> failure x
   Chococino.Abs.While _ expr stmt -> failure x
   Chococino.Abs.SExp _ expr -> failure x
   Chococino.Abs.Break _ -> failure x
