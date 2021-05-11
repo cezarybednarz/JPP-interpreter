@@ -38,9 +38,9 @@ The reserved words used in Chococino are the following:
 
 The symbols used in Chococino are the following:
   | ( | ) | & | ,
-  | { | } | ; | [
-  | ] | = | ++ | --
-  | < | > | - | !
+  | { | } | ; | =
+  | ++ | -- | < | >
+  | [ | ] | - | !
   | && | || | + | *
   | / | % | <= | >=
   | == | != |  |
@@ -69,15 +69,15 @@ All other symbols are terminals.
   | //Stmt// | -> | ``;``
   |  |  **|**  | //Block//
   |  |  **|**  | //Type// //[Item]// ``;``
-  |  |  **|**  | //Type// //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //Type// //ArrExpr//
   |  |  **|**  | //Ident// ``=`` //Expr// ``;``
   |  |  **|**  | //ArrExpr// ``=`` //Expr// ``;``
   |  |  **|**  | //Ident// ``++`` ``;``
   |  |  **|**  | //Ident// ``--`` ``;``
   |  |  **|**  | ``return`` //Expr// ``;``
   |  |  **|**  | ``return`` ``;``
-  |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Stmt//
-  |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Stmt// ``else`` //Stmt//
+  |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Block//
+  |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Block// ``else`` //Block//
   |  |  **|**  | ``while`` ``(`` //Expr// ``)`` //Stmt//
   |  |  **|**  | //Expr// ``;``
   |  |  **|**  | ``break``

@@ -14,7 +14,7 @@ import Chococino.Lex
 
 }
 
-%name pProgram Program
+%name pProgram_internal Program
 -- no lexer declaration
 %monad { Err } { (>>=) } { return }
 %tokentype {Token}
@@ -59,142 +59,150 @@ import Chococino.Lex
   '{' { PT _ (TS _ 38) }
   '||' { PT _ (TS _ 39) }
   '}' { PT _ (TS _ 40) }
-  L_Ident  { PT _ (TV $$) }
-  L_integ  { PT _ (TI $$) }
-  L_quoted { PT _ (TL $$) }
+  L_Ident  { PT _ (TV _) }
+  L_integ  { PT _ (TI _) }
+  L_quoted { PT _ (TL _) }
 
 %%
 
-Ident :: { Chococino.Abs.Ident }
-Ident  : L_Ident { Chococino.Abs.Ident $1 }
+Ident :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Ident) }
+Ident  : L_Ident { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Ident (tokenText $1)) }
 
-Integer :: { Integer }
-Integer  : L_integ  { (read $1) :: Integer }
+Integer :: { (Chococino.Abs.BNFC'Position, Integer) }
+Integer  : L_integ  { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), (read (tokenText $1)) :: Integer) }
 
-String  :: { String }
-String   : L_quoted { $1 }
+String  :: { (Chococino.Abs.BNFC'Position, String) }
+String   : L_quoted { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), ((\(PT _ (TL s)) -> s) $1)) }
 
-Program :: { Chococino.Abs.Program }
-Program : ListTopDef { Chococino.Abs.Program $1 }
+Program :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Program) }
+Program : ListTopDef { (fst $1, Chococino.Abs.Program (fst $1) (snd $1)) }
 
-TopDef :: { Chococino.Abs.TopDef }
-TopDef : Type Ident '(' ListArg ')' Block { Chococino.Abs.FnDef $1 $2 $4 $6 }
+TopDef :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.TopDef) }
+TopDef : Type Ident '(' ListArg ')' Block { (fst $1, Chococino.Abs.FnDef (fst $1) (snd $1) (snd $2) (snd $4) (snd $6)) }
 
-ListTopDef :: { [Chococino.Abs.TopDef] }
-ListTopDef : TopDef { (:[]) $1 } | TopDef ListTopDef { (:) $1 $2 }
+ListTopDef :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.TopDef]) }
+ListTopDef : TopDef { (fst $1, (:[]) (snd $1)) }
+           | TopDef ListTopDef { (fst $1, (:) (snd $1) (snd $2)) }
 
-Arg :: { Chococino.Abs.Arg }
-Arg : Type Ident { Chococino.Abs.ArgNoRef $1 $2 }
-    | Type '&' Ident { Chococino.Abs.ArgRef $1 $3 }
+Arg :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Arg) }
+Arg : Type Ident { (fst $1, Chococino.Abs.ArgNoRef (fst $1) (snd $1) (snd $2)) }
+    | Type '&' Ident { (fst $1, Chococino.Abs.ArgRef (fst $1) (snd $1) (snd $3)) }
 
-ListArg :: { [Chococino.Abs.Arg] }
-ListArg : {- empty -} { [] }
-        | Arg { (:[]) $1 }
-        | Arg ',' ListArg { (:) $1 $3 }
+ListArg :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.Arg]) }
+ListArg : {- empty -} { (Chococino.Abs.BNFC'NoPosition, []) }
+        | Arg { (fst $1, (:[]) (snd $1)) }
+        | Arg ',' ListArg { (fst $1, (:) (snd $1) (snd $3)) }
 
-Block :: { Chococino.Abs.Block }
-Block : '{' ListStmt '}' { Chococino.Abs.Block $2 }
+Block :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Block) }
+Block : '{' ListStmt '}' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Block (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
 
-ListStmt :: { [Chococino.Abs.Stmt] }
-ListStmt : {- empty -} { [] } | Stmt ListStmt { (:) $1 $2 }
+ListStmt :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.Stmt]) }
+ListStmt : {- empty -} { (Chococino.Abs.BNFC'NoPosition, []) }
+         | Stmt ListStmt { (fst $1, (:) (snd $1) (snd $2)) }
 
-Stmt :: { Chococino.Abs.Stmt }
-Stmt : ';' { Chococino.Abs.Empty }
-     | Block { Chococino.Abs.BStmt $1 }
-     | Type ListItem ';' { Chococino.Abs.Decl $1 $2 }
-     | Type Ident '[' Expr ']' { Chococino.Abs.ArrDecl $1 $2 $4 }
-     | Ident '=' Expr ';' { Chococino.Abs.Ass $1 $3 }
-     | Ident '[' Expr ']' '=' Expr { Chococino.Abs.ArrAss $1 $3 $6 }
-     | Ident '++' ';' { Chococino.Abs.Incr $1 }
-     | Ident '--' ';' { Chococino.Abs.Decr $1 }
-     | 'return' Expr ';' { Chococino.Abs.Ret $2 }
-     | 'return' ';' { Chococino.Abs.VRet }
-     | 'if' '(' Expr ')' Stmt { Chococino.Abs.Cond $3 $5 }
-     | 'if' '(' Expr ')' Stmt 'else' Stmt { Chococino.Abs.CondElse $3 $5 $7 }
-     | 'while' '(' Expr ')' Stmt { Chococino.Abs.While $3 $5 }
-     | Expr ';' { Chococino.Abs.SExp $1 }
-     | 'break' { Chococino.Abs.Break }
-     | 'continue' { Chococino.Abs.Continue }
-     | TopDef ';' { Chococino.Abs.FnNestDef $1 }
+Stmt :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Stmt) }
+Stmt : ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Empty (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | Block { (fst $1, Chococino.Abs.BStmt (fst $1) (snd $1)) }
+     | Type ListItem ';' { (fst $1, Chococino.Abs.Decl (fst $1) (snd $1) (snd $2)) }
+     | Type ArrExpr { (fst $1, Chococino.Abs.ArrDecl (fst $1) (snd $1) (snd $2)) }
+     | Ident '=' Expr ';' { (fst $1, Chococino.Abs.Ass (fst $1) (snd $1) (snd $3)) }
+     | ArrExpr '=' Expr ';' { (fst $1, Chococino.Abs.ArrAss (fst $1) (snd $1) (snd $3)) }
+     | Ident '++' ';' { (fst $1, Chococino.Abs.Incr (fst $1) (snd $1)) }
+     | Ident '--' ';' { (fst $1, Chococino.Abs.Decr (fst $1) (snd $1)) }
+     | 'return' Expr ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Ret (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+     | 'return' ';' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.VRet (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'if' '(' Expr ')' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Cond (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
+     | 'if' '(' Expr ')' Stmt 'else' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.CondElse (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $7)) }
+     | 'while' '(' Expr ')' Stmt { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.While (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
+     | Expr ';' { (fst $1, Chococino.Abs.SExp (fst $1) (snd $1)) }
+     | 'break' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Break (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'continue' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Continue (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | TopDef ';' { (fst $1, Chococino.Abs.FnNestDef (fst $1) (snd $1)) }
 
-Item :: { Chococino.Abs.Item }
-Item : Ident { Chococino.Abs.NoInit $1 }
-     | Ident '=' Expr { Chococino.Abs.Init $1 $3 }
+Item :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Item) }
+Item : Ident { (fst $1, Chococino.Abs.NoInit (fst $1) (snd $1)) }
+     | Ident '=' Expr { (fst $1, Chococino.Abs.Init (fst $1) (snd $1) (snd $3)) }
 
-ListItem :: { [Chococino.Abs.Item] }
-ListItem : Item { (:[]) $1 } | Item ',' ListItem { (:) $1 $3 }
+ListItem :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.Item]) }
+ListItem : Item { (fst $1, (:[]) (snd $1)) }
+         | Item ',' ListItem { (fst $1, (:) (snd $1) (snd $3)) }
 
-Type :: { Chococino.Abs.Type }
-Type : 'int' { Chococino.Abs.Int }
-     | 'string' { Chococino.Abs.Str }
-     | 'boolean' { Chococino.Abs.Bool }
-     | 'void' { Chococino.Abs.Void }
-     | 'function' '<' Type '(' ListType ')' '>' { Chococino.Abs.Function $3 $5 }
+Type :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Type) }
+Type : 'int' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Int (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'string' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Str (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'boolean' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Bool (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'void' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Void (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+     | 'function' '<' Type '(' ListType ')' '>' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Function (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
 
-ListType :: { [Chococino.Abs.Type] }
-ListType : {- empty -} { [] }
-         | Type { (:[]) $1 }
-         | Type ',' ListType { (:) $1 $3 }
+ListType :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.Type]) }
+ListType : {- empty -} { (Chococino.Abs.BNFC'NoPosition, []) }
+         | Type { (fst $1, (:[]) (snd $1)) }
+         | Type ',' ListType { (fst $1, (:) (snd $1) (snd $3)) }
 
-Expr6 :: { Chococino.Abs.Expr }
-Expr6 : Ident { Chococino.Abs.EVar $1 }
-      | Integer { Chococino.Abs.ELitInt $1 }
-      | 'true' { Chococino.Abs.ELitTrue }
-      | 'false' { Chococino.Abs.ELitFalse }
-      | Ident '(' ListExpr ')' { Chococino.Abs.EApp $1 $3 }
-      | String { Chococino.Abs.EString $1 }
-      | Ident '[' Expr ']' { Chococino.Abs.EArr $1 $3 }
-      | '(' Expr ')' { $2 }
+ArrExpr :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.ArrExpr) }
+ArrExpr : Ident '[' Expr ']' { (fst $1, Chococino.Abs.FirstDim (fst $1) (snd $1) (snd $3)) }
+        | ArrExpr '[' Expr ']' { (fst $1, Chococino.Abs.MultDim (fst $1) (snd $1) (snd $3)) }
 
-Expr5 :: { Chococino.Abs.Expr }
-Expr5 : '-' Expr6 { Chococino.Abs.Neg $2 }
-      | '!' Expr6 { Chococino.Abs.Not $2 }
-      | Expr6 { $1 }
+Expr6 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr6 : Ident { (fst $1, Chococino.Abs.EVar (fst $1) (snd $1)) }
+      | Integer { (fst $1, Chococino.Abs.ELitInt (fst $1) (snd $1)) }
+      | 'true' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.ELitTrue (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | 'false' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.ELitFalse (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | Ident '(' ListExpr ')' { (fst $1, Chococino.Abs.EApp (fst $1) (snd $1) (snd $3)) }
+      | String { (fst $1, Chococino.Abs.EString (fst $1) (snd $1)) }
+      | ArrExpr { (fst $1, Chococino.Abs.EArr (fst $1) (snd $1)) }
+      | '(' Expr ')' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), (snd $2)) }
 
-Expr4 :: { Chococino.Abs.Expr }
-Expr4 : Expr4 MulOp Expr5 { Chococino.Abs.EMul $1 $2 $3 }
-      | Expr5 { $1 }
+Expr5 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr5 : '-' Expr6 { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Neg (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+      | '!' Expr6 { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Not (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $2)) }
+      | Expr6 { (fst $1, (snd $1)) }
 
-Expr3 :: { Chococino.Abs.Expr }
-Expr3 : Expr3 AddOp Expr4 { Chococino.Abs.EAdd $1 $2 $3 }
-      | Expr4 { $1 }
+Expr4 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr4 : Expr4 MulOp Expr5 { (fst $1, Chococino.Abs.EMul (fst $1) (snd $1) (snd $2) (snd $3)) }
+      | Expr5 { (fst $1, (snd $1)) }
 
-Expr2 :: { Chococino.Abs.Expr }
-Expr2 : Expr2 RelOp Expr3 { Chococino.Abs.ERel $1 $2 $3 }
-      | Expr3 { $1 }
+Expr3 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr3 : Expr3 AddOp Expr4 { (fst $1, Chococino.Abs.EAdd (fst $1) (snd $1) (snd $2) (snd $3)) }
+      | Expr4 { (fst $1, (snd $1)) }
 
-Expr1 :: { Chococino.Abs.Expr }
-Expr1 : Expr2 '&&' Expr1 { Chococino.Abs.EAnd $1 $3 }
-      | Expr2 { $1 }
+Expr2 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr2 : Expr2 RelOp Expr3 { (fst $1, Chococino.Abs.ERel (fst $1) (snd $1) (snd $2) (snd $3)) }
+      | Expr3 { (fst $1, (snd $1)) }
 
-Expr :: { Chococino.Abs.Expr }
-Expr : Expr1 '||' Expr { Chococino.Abs.EOr $1 $3 }
-     | Lambda { Chococino.Abs.ELambda $1 }
-     | Expr1 { $1 }
+Expr1 :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr1 : Expr2 '&&' Expr1 { (fst $1, Chococino.Abs.EAnd (fst $1) (snd $1) (snd $3)) }
+      | Expr2 { (fst $1, (snd $1)) }
 
-ListExpr :: { [Chococino.Abs.Expr] }
-ListExpr : {- empty -} { [] }
-         | Expr { (:[]) $1 }
-         | Expr ',' ListExpr { (:) $1 $3 }
+Expr :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Expr) }
+Expr : Expr1 '||' Expr { (fst $1, Chococino.Abs.EOr (fst $1) (snd $1) (snd $3)) }
+     | Lambda { (fst $1, Chococino.Abs.ELambda (fst $1) (snd $1)) }
+     | Expr1 { (fst $1, (snd $1)) }
 
-Lambda :: { Chococino.Abs.Lambda }
-Lambda : 'lambda' '<' Type '(' ListArg ')' '>' Block { Chococino.Abs.LambdaDef $3 $5 $8 }
+ListExpr :: { (Chococino.Abs.BNFC'Position, [Chococino.Abs.Expr]) }
+ListExpr : {- empty -} { (Chococino.Abs.BNFC'NoPosition, []) }
+         | Expr { (fst $1, (:[]) (snd $1)) }
+         | Expr ',' ListExpr { (fst $1, (:) (snd $1) (snd $3)) }
 
-AddOp :: { Chococino.Abs.AddOp }
-AddOp : '+' { Chococino.Abs.Plus } | '-' { Chococino.Abs.Minus }
+Lambda :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.Lambda) }
+Lambda : 'lambda' '<' Type '(' ListArg ')' '>' Block { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.LambdaDef (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5) (snd $8)) }
 
-MulOp :: { Chococino.Abs.MulOp }
-MulOp : '*' { Chococino.Abs.Times }
-      | '/' { Chococino.Abs.Div }
-      | '%' { Chococino.Abs.Mod }
+AddOp :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.AddOp) }
+AddOp : '+' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Plus (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '-' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Minus (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
 
-RelOp :: { Chococino.Abs.RelOp }
-RelOp : '<' { Chococino.Abs.LTH }
-      | '<=' { Chococino.Abs.LE }
-      | '>' { Chococino.Abs.GTH }
-      | '>=' { Chococino.Abs.GE }
-      | '==' { Chococino.Abs.EQU }
-      | '!=' { Chococino.Abs.NE }
+MulOp :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.MulOp) }
+MulOp : '*' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Times (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '/' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Div (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '%' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.Mod (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+
+RelOp :: { (Chococino.Abs.BNFC'Position, Chococino.Abs.RelOp) }
+RelOp : '<' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.LTH (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '<=' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.LE (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '>' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.GTH (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '>=' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.GE (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '==' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.EQU (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
+      | '!=' { (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1), Chococino.Abs.NE (uncurry Chococino.Abs.BNFC'Position (tokenLineCol $1))) }
 {
 
 type Err = Either String
@@ -210,5 +218,9 @@ happyError ts = Left $
 myLexer :: String -> [Token]
 myLexer = tokens
 
+-- Entrypoints
+
+pProgram :: [Token] -> Err Chococino.Abs.Program
+pProgram = fmap snd . pProgram_internal
 }
 

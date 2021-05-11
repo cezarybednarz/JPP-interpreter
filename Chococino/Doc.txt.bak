@@ -38,9 +38,9 @@ The reserved words used in Chococino are the following:
 
 The symbols used in Chococino are the following:
   | ( | ) | & | ,
-  | { | } | ; | [
-  | ] | = | ++ | --
-  | < | > | - | !
+  | { | } | ; | =
+  | ++ | -- | < | >
+  | [ | ] | - | !
   | && | || | + | *
   | / | % | <= | >=
   | == | != |  |
@@ -69,9 +69,9 @@ All other symbols are terminals.
   | //Stmt// | -> | ``;``
   |  |  **|**  | //Block//
   |  |  **|**  | //Type// //[Item]// ``;``
-  |  |  **|**  | //Type// //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //Type// //ArrExpr//
   |  |  **|**  | //Ident// ``=`` //Expr// ``;``
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]`` ``=`` //Expr//
+  |  |  **|**  | //ArrExpr// ``=`` //Expr// ``;``
   |  |  **|**  | //Ident// ``++`` ``;``
   |  |  **|**  | //Ident// ``--`` ``;``
   |  |  **|**  | ``return`` //Expr// ``;``
@@ -95,13 +95,15 @@ All other symbols are terminals.
   | //[Type]// | -> | **eps**
   |  |  **|**  | //Type//
   |  |  **|**  | //Type// ``,`` //[Type]//
+  | //ArrExpr// | -> | //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //ArrExpr// ``[`` //Expr// ``]``
   | //Expr6// | -> | //Ident//
   |  |  **|**  | //Integer//
   |  |  **|**  | ``true``
   |  |  **|**  | ``false``
   |  |  **|**  | //Ident// ``(`` //[Expr]// ``)``
   |  |  **|**  | //String//
-  |  |  **|**  | //Ident// ``[`` //Expr// ``]``
+  |  |  **|**  | //ArrExpr//
   |  |  **|**  | ``(`` //Expr// ``)``
   | //Expr5// | -> | ``-`` //Expr6//
   |  |  **|**  | ``!`` //Expr6//
