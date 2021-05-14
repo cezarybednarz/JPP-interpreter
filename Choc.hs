@@ -2,13 +2,10 @@ module Main where
 
 import System.Environment ( getArgs )
 import Data.Map.Lazy as LazyMap ()
-import System.Exit ( exitFailure )
+import System.Exit ( exitFailure, exitSuccess )
 import Chococino.Par ( pProgram, myLexer )
-import System.IO ( stderr, debug, hPutStrLn )
-
---type Loc = Int
---type Env = LazyMap.Map Ident Loc
---type Store = LazyMap.Map Loc Value
+import System.IO ( stderr, hPutStrLn )
+import Interpreter ( interpret )
 
 main :: IO ()
 main = do
@@ -28,9 +25,9 @@ main = do
             output <- interpret parseTree
             case output of 
               Left message -> hPutStrLn stderr message
-              Right exitCode -> do
-                if exitCode != 0
-                  then hPutStrLn stderr $ "Exit code: " ++ exitCode
+              Right (exitCode, _) -> do
+                if exitCode /= 0
+                  then hPutStrLn stderr $ "Error, exit code: " ++ show exitCode
                 else
                   exitSuccess
 
