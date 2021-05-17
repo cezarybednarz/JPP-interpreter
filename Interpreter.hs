@@ -1,16 +1,18 @@
 module Interpreter where
 
 
-import Data.Map.Lazy as LazyMap 
-import Chococino.Abs 
+import Data.Map.Lazy as LazyMap
+import Chococino.Abs
 import Control.Monad.State
 import Control.Monad.Except
 import Memory
 
 -- types --
 
-data Val = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull 
+data Val = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
   deriving (Eq, Ord)
+
+data RetInfo = Return Val | ReturnNothing | Break | Continue
 
 type Loc = Int
 type Env = LazyMap.Map Ident [Loc]
@@ -58,15 +60,15 @@ alloc = do
     (l:ls) -> putFreeLocs ls >> return l
 
 free :: Loc -> IM ()
-free l = do 
+free l = do
   ls <- getFreeLocs
   putFreeLocs (l:ls)
 
 updateStore :: Loc -> Val -> IM ()
-updateStore v x = modify $ \state -> state { 
+updateStore v x = modify $ \state -> state {
   store = LazyMap.insert v x (store state)}
 
-getStore :: IM Store  
+getStore :: IM Store
 getStore = gets store
 
 getFreeLocs :: IM [Loc]
@@ -107,9 +109,9 @@ leaveScope = do
   env <- getEnv
   scope <- popScope
   -- TODO: free scope vars
-  let scopeLocs = catMaybes $ map (flip lookupEnv env) scope
+  let scopeLocs = mapMaybe (flip lookupEnv env) scope
   mapM_ free scopeLocs
-  let env' = foldr (\n e -> Map.update pop n e)env scope
+  let env' = foldr (Map.update pop)env scope
   putEnv env' where
     pop :: [Loc] -> Maybe [Loc]
     pop [] = Nothing
@@ -123,36 +125,36 @@ createVar n = do
      return l
 
 addLocal :: Name -> Scopes -> Scopes
-addLocal n (h:t) =(n:h):t 
+addLocal n (h:t) =(n:h):t
 addLocal n [] = []
 
 lookupEnv :: Name -> Env -> Maybe Loc
 lookupEnv n e = do
-  stack <- Map.lookup n e 
+  stack <- Map.lookup n e
   case stack of
     [] -> Nothing
     (l:_) -> return l
-  
+
 updateEnv :: Name -> Loc -> Env -> Env
-updateEnv n l = Map.insertWith (++) n [l] 
+updateEnv n l = Map.insertWith (++) n [l]
 
 getNameLoc :: Name -> IM Loc
 getNameLoc n =  do
   env <- getEnv
   let res  = lookupEnv n env
   maybe (throwError $ unwords["Undefined var",n,"env is",show env]) return res
-  
+
 getVar :: Name -> IM Val
 getVar v =  do
   loc <- getNameLoc v
-  store <- getStore 
+  store <- getStore
   let res  = Map.lookup loc store
   maybe (throwError $ "Unallocated var"++ v) return res
 
 -- run interpreter --
 
 interpretProgram :: Program -> IO (Either String (Integer, IntState))
-interpretProgram (Program program) = do
+interpretProgram (Program program) =
   addTopDefs program >> runIM (evalExpr $ EApp (Ident "main")) initState
 
 -- TopDef --
@@ -170,6 +172,39 @@ addTopDefs ((t,id,args,b):ds) = addTopDef t id args b >> addTopDefs ds
 -- Expr --
 
 evalExpr :: Expr -> IM Val
+evalExpr (ELitInt i) = return i
+-- evalExpr (ELiTrue b)
+-- evalExpr (ELitFalse b)
+evalExpr (EApp t args) = return t
+-- evalExpr (EString s) 
+-- evalExpr (EArr arr)
+-- todo cała reszta Expr
+
+
+-- Stmt
+
+execBlock :: Block -> IM RetInfo
+-- todo
+
+
+declItem :: Type -> Item -> IM ()
+declItem t id = do
+  n <- case t of
+    VInt -> 0
+    VStr -> ""
+    VBool -> False
+    _ -> 0
+  l <- createVar id
+  updateStore l n
+
+declItem t id e = do
+  n <- evalExpr e
+  l <- createVar id
+  updateStore l n
+
+execDecl :: Type -> [Item] -> IM ()
+execDecl t = foldr ((>>) . declItem t) (return ())
+
 
 
 
