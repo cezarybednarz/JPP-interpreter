@@ -4,8 +4,7 @@ module Interpreter where
 import Data.Map.Lazy as LazyMap
 import Chococino.Abs
 import Control.Monad.State
-import Control.Monad.Except
-import Memory
+import Control.Monad.Error
 
 -- types --
 
@@ -46,9 +45,9 @@ initState = IntState initStore initFreeLocs initEnv initScopes
 
 -- IM --
 
-type IM a = StateT IntState (ExceptT String IO) a
+type IM a = StateT IntState (ErrorT String IO) a
 runIM :: IM a -> IntState -> IO (Either String (a, IntState))
-runIM m st = runExceptT (runStateT m st)
+runIM m st = runErrorT (runStateT m st)
 
 -- memory management -- 
 
@@ -171,20 +170,50 @@ addTopDefs ((t,id,args,b):ds) = addTopDef t id args b >> addTopDefs ds
 
 -- Expr --
 
+declFunctionArgs :: [Expr] -> [Arg] -> IM ()
+declFunctionArgs exprs@(e:xe) args@(a:xa) =
+  if length exprs /= length args then
+    throwError "number of arguments don't match"
+  else do
+    v <- evalExpr e
+    case a of
+      (ArgNoRef t id) -> do
+        l <- createVar id
+        updateStore l v
+      (ArgRef t id) -> do
+        l <- createVar id
+        updateStore l v
+
+
 evalExpr :: Expr -> IM Val
 evalExpr (ELitInt i) = return i
 -- evalExpr (ELiTrue b)
 -- evalExpr (ELitFalse b)
-evalExpr (EApp t args) = return t
+
+evalExpr (EApp id exprs) = do
+  enterScope
+  (t,args,b) <- getVar id 
+  declFunctionArgs exprs args
+  retVal <- execBlock b
+  leaveScope
+  case retVal of
+    Return val -> return val
+    _ -> throwError $ unwords["Function ",id,"didn't return anything"]
+
 -- evalExpr (EString s) 
 -- evalExpr (EArr arr)
--- todo cała reszta Expr
 
 
--- Stmt
+-- Stmt --
 
 execBlock :: Block -> IM RetInfo
--- todo
+execBlock (BStmt []) = return ReturnNothing
+execBlock (BStmt (s:ss)) = do
+  ret <- execStmt s
+  case ret of 
+    Return val -> return (Return val)
+    ReturnNothing -> execBlock ss
+    breakOrCont -> return breakOrContinue
 
 
 declItem :: Type -> Item -> IM ()
@@ -196,17 +225,19 @@ declItem t id = do
     _ -> 0
   l <- createVar id
   updateStore l n
-
+  
 declItem t id e = do
   n <- evalExpr e
   l <- createVar id
   updateStore l n
 
 execDecl :: Type -> [Item] -> IM ()
-execDecl t = foldr ((>>) . declItem t) (return ())
+execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 
+-- execution Stmt -- 
 
-
-
-
-
+execStmt :: Stmt -> IM RetInfo
+execStmt (Empty) = return ReturnNothing
+execStmt (BStmt b) = executeBlock b
+execStmt (Decl t items) = execDecl t items
+-- todo cala reszta
