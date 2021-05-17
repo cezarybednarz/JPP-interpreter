@@ -11,7 +11,7 @@ import Data.Maybe(catMaybes)
 
 -- types --n
 
-data Val = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
+data Val = VInt Integer | VBool Bool | VString String | VFunc Type Ident [Arg] Block | VNull
   deriving (Eq, Ord)
 
 data RetInfo = Return Val | ReturnNothing | Break | Continue
@@ -103,7 +103,7 @@ popScope = do
   putScopes scopes
   return scope
 
-  
+
 enterScope :: IM ()
 enterScope = modifyScopes (emptyScope:)
 
@@ -152,25 +152,23 @@ getVar v =  do
   loc <- getIdentLoc v
   store <- getStore
   let res  = Map.lookup loc store
-  maybe (throwError $ "Unallocated var"++ v) return res
+  maybe (throwError $ "Unallocated var"++ show v) return res
 
 -- run interpreter --
 
-interpretProgram :: Program -> IO (Either String (Integer, IntState))
-interpretProgram (Program program) =
-  addTopDefs program >> runIM (evalExpr $ EApp (Ident "main")) initState
+interpretProgram :: Program -> IO (Either String (Val, IntState))
+interpretProgram (Program program) = 
+  addTopDefs program >> runIM (evalExpr $ EApp (Ident "main") []) initState
 
 -- TopDef --
 
 addTopDef :: TopDef -> IM ()
-addTopDef (t,id,args,b) = do
-  n <- (t,args,b)
+addTopDef (FnDef t id args b) = do
   l <- createVar id
-  updateStore l n
+  updateStore l (VFunc t id args b)
 
 addTopDefs :: [TopDef] -> IM ()
-addTopDefs [] = return ()
-addTopDefs ((t,id,args,b):ds) = addTopDef t id args b >> addTopDefs ds
+addTopDefs = Prelude.foldr ((>>) . addTopDef) (return ())
 
 -- Expr --
 
@@ -190,19 +188,19 @@ declFunctionArgs exprs@(e:xe) args@(a:xa) =
 
 
 evalExpr :: Expr -> IM Val
-evalExpr (ELitInt i) = return i
+evalExpr (ELitInt i) = return (VInt i)
 -- evalExpr (ELiTrue b)
 -- evalExpr (ELitFalse b)
 
 evalExpr (EApp id exprs) = do
   enterScope
-  (t,args,b) <- getVar id 
+  (VFunc t id args (Block b)) <- getVar id
   declFunctionArgs exprs args
   retVal <- execBlock b
   leaveScope
   case retVal of
     Return val -> return val
-    _ -> throwError $ unwords["Function ",id,"didn't return anything"]
+    _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
 
 -- evalExpr (EString s) 
 -- evalExpr (EArr arr)
@@ -214,7 +212,7 @@ execBlock :: [Stmt] -> IM RetInfo
 execBlock [] = return ReturnNothing
 execBlock (s:ss) = do
   ret <- execStmt s
-  case ret of 
+  case ret of
     Return val -> return (Return val)
     ReturnNothing -> execBlock ss
     breakOrCont -> return breakOrCont
@@ -228,7 +226,7 @@ declItem t (NoInit id) = do
     _ -> 0 -- todo default value for Str
   l <- createVar id
   updateStore l n
-  
+
 declItem t (Init id e) = do
   n <- evalExpr e
   l <- createVar id
