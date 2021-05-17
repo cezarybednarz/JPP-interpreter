@@ -210,9 +210,9 @@ evalExpr (EApp id exprs) = do
 
 -- Stmt --
 
-execBlock :: Block -> IM RetInfo
-execBlock (BStmt []) = return ReturnNothing
-execBlock (BStmt (s:ss)) = do
+execBlock :: [Stmt] -> IM RetInfo
+execBlock [] = return ReturnNothing
+execBlock (s:ss) = do
   ret <- execStmt s
   case ret of 
     Return val -> return (Return val)
@@ -221,15 +221,15 @@ execBlock (BStmt (s:ss)) = do
 
 
 declItem :: Type -> Item -> IM ()
-declItem t id = do
+declItem t (NoInit id) = do
   n <- case t of
-    VInt -> 0
-    VBool -> False
+    Int -> 0
+    Bool -> 0
     _ -> 0 -- todo default value for Str
   l <- createVar id
   updateStore l n
   
-declItem t (id,e) = do
+declItem t (Init id e) = do
   n <- evalExpr e
   l <- createVar id
   updateStore l n
@@ -241,6 +241,6 @@ execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 
 execStmt :: Stmt -> IM RetInfo
 execStmt Empty = return ReturnNothing
-execStmt (BStmt b) = execBlock b
-execStmt (Decl t items) = execDecl t items
+execStmt (BStmt (Block b)) = execBlock b
+execStmt (Decl t items) = execDecl t items >> return ReturnNothing
 -- todo cala reszta
