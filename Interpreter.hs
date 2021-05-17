@@ -1,12 +1,15 @@
+{-# LANGUAGE MultiParamTypeClasses, NamedFieldPuns #-}
+
 module Interpreter where
 
 
-import Data.Map.Lazy as LazyMap
+import Data.Map as Map
 import Chococino.Abs
 import Control.Monad.State
 import Control.Monad.Error
+import Data.Maybe(catMaybes)
 
--- types --
+-- types --n
 
 data Val = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | VNull
   deriving (Eq, Ord)
@@ -14,8 +17,8 @@ data Val = VInt Integer | VBool Bool | VString String | VFunc Env [Arg] Block | 
 data RetInfo = Return Val | ReturnNothing | Break | Continue
 
 type Loc = Int
-type Env = LazyMap.Map Ident [Loc]
-type Store = LazyMap.Map Loc Val
+type Env = Map.Map Ident [Loc]
+type Store = Map.Map Loc Val
 type Scope = [Ident]
 type Scopes = [Scope]
 
@@ -29,13 +32,13 @@ data IntState = IntState {
 -- init enviroment --
 
 initStore :: Store
-initStore = LazyMap.empty
+initStore = Map.empty
 
 initFreeLocs :: [Loc]
 initFreeLocs = [1..2^16]
 
 initEnv :: Env
-initEnv = LazyMap.empty
+initEnv = Map.empty
 
 emptyScope = []
 initScopes :: Scopes
@@ -65,7 +68,7 @@ free l = do
 
 updateStore :: Loc -> Val -> IM ()
 updateStore v x = modify $ \state -> state {
-  store = LazyMap.insert v x (store state)}
+  store = Map.insert v x (store state)}
 
 getStore :: IM Store
 getStore = gets store
@@ -100,6 +103,7 @@ popScope = do
   putScopes scopes
   return scope
 
+  
 enterScope :: IM ()
 enterScope = modifyScopes (emptyScope:)
 
@@ -108,44 +112,44 @@ leaveScope = do
   env <- getEnv
   scope <- popScope
   -- TODO: free scope vars
-  let scopeLocs = mapMaybe (flip lookupEnv env) scope
+  let scopeLocs = catMaybes $ Map.map (flip lookupEnv env) scope
   mapM_ free scopeLocs
-  let env' = foldr (Map.update pop)env scope
+  let env' = Map.foldr (\n e -> Map.update pop n e)env scope
   putEnv env' where
     pop :: [Loc] -> Maybe [Loc]
     pop [] = Nothing
     pop (x:xs) = Just xs
 
-createVar :: Name -> IM Loc
+createVar :: Ident -> IM Loc
 createVar n = do
      l <- alloc
      modifyEnv (updateEnv n l)
      modifyScopes (addLocal n)
      return l
 
-addLocal :: Name -> Scopes -> Scopes
+addLocal :: Ident -> Scopes -> Scopes
 addLocal n (h:t) =(n:h):t
 addLocal n [] = []
 
-lookupEnv :: Name -> Env -> Maybe Loc
+lookupEnv :: Ident -> Env -> Maybe Loc
 lookupEnv n e = do
   stack <- Map.lookup n e
   case stack of
     [] -> Nothing
     (l:_) -> return l
 
-updateEnv :: Name -> Loc -> Env -> Env
+updateEnv :: Ident -> Loc -> Env -> Env
 updateEnv n l = Map.insertWith (++) n [l]
 
-getNameLoc :: Name -> IM Loc
-getNameLoc n =  do
+getIdentLoc :: Ident -> IM Loc
+getIdentLoc n =  do
   env <- getEnv
   let res  = lookupEnv n env
   maybe (throwError $ unwords["Undefined var",n,"env is",show env]) return res
 
-getVar :: Name -> IM Val
+getVar :: Ident -> IM Val
 getVar v =  do
-  loc <- getNameLoc v
+  loc <- getIdentLoc v
   store <- getStore
   let res  = Map.lookup loc store
   maybe (throwError $ "Unallocated var"++ v) return res
@@ -213,20 +217,19 @@ execBlock (BStmt (s:ss)) = do
   case ret of 
     Return val -> return (Return val)
     ReturnNothing -> execBlock ss
-    breakOrCont -> return breakOrContinue
+    breakOrCont -> return breakOrCont
 
 
 declItem :: Type -> Item -> IM ()
 declItem t id = do
   n <- case t of
     VInt -> 0
-    VStr -> ""
     VBool -> False
-    _ -> 0
+    _ -> 0 -- todo default value for Str
   l <- createVar id
   updateStore l n
   
-declItem t id e = do
+declItem t (id,e) = do
   n <- evalExpr e
   l <- createVar id
   updateStore l n
@@ -237,7 +240,7 @@ execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 -- execution Stmt -- 
 
 execStmt :: Stmt -> IM RetInfo
-execStmt (Empty) = return ReturnNothing
-execStmt (BStmt b) = executeBlock b
+execStmt Empty = return ReturnNothing
+execStmt (BStmt b) = execBlock b
 execStmt (Decl t items) = execDecl t items
 -- todo cala reszta
