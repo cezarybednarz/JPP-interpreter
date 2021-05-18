@@ -221,8 +221,12 @@ evalExpr (EApp id exprs) = do
 
 evalExpr (EString s) = throwError "EString not implemented"
 evalExpr (EArr arr) = throwError "EArr not implemented"
-
-
+evalExpr (Neg expr) = throwError "Neg not implemented"
+evalExpr (EMul expr1 op expr2) = throwError "EMul not implemented"
+evalExpr (EAdd expr1 op expr2) = throwError "EAdd not implemented"
+evalExpr (EAnd expr1 expr2) = throwError "EAnd not implemented"
+evalExpr (EOr expr1 expr2) = throwError "EOr not implemented"
+evalExpr (ELambda l) = throwError "ELambda not implemented"
 
 -- Stmt --
 
