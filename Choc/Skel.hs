@@ -48,7 +48,7 @@ transStmt x = case x of
   Choc.Abs.VRet -> failure x
   Choc.Abs.Cond expr block -> failure x
   Choc.Abs.CondElse expr block1 block2 -> failure x
-  Choc.Abs.While expr stmt -> failure x
+  Choc.Abs.While expr block -> failure x
   Choc.Abs.SExp expr -> failure x
   Choc.Abs.Break -> failure x
   Choc.Abs.Continue -> failure x

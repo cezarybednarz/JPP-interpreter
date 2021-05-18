@@ -155,7 +155,7 @@ instance Print Choc.Abs.Stmt where
     Choc.Abs.VRet -> prPrec i 0 (concatD [doc (showString "return"), doc (showString ";")])
     Choc.Abs.Cond expr block -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
     Choc.Abs.CondElse expr block1 block2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block1, doc (showString "else"), prt 0 block2])
-    Choc.Abs.While expr stmt -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 stmt])
+    Choc.Abs.While expr block -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 expr, doc (showString ")"), prt 0 block])
     Choc.Abs.SExp expr -> prPrec i 0 (concatD [prt 0 expr, doc (showString ";")])
     Choc.Abs.Break -> prPrec i 0 (concatD [doc (showString "break")])
     Choc.Abs.Continue -> prPrec i 0 (concatD [doc (showString "continue")])

@@ -112,7 +112,7 @@ Stmt : ';' { Choc.Abs.Empty }
      | 'return' ';' { Choc.Abs.VRet }
      | 'if' '(' Expr ')' Block { Choc.Abs.Cond $3 $5 }
      | 'if' '(' Expr ')' Block 'else' Block { Choc.Abs.CondElse $3 $5 $7 }
-     | 'while' '(' Expr ')' Stmt { Choc.Abs.While $3 $5 }
+     | 'while' '(' Expr ')' Block { Choc.Abs.While $3 $5 }
      | Expr ';' { Choc.Abs.SExp $1 }
      | 'break' { Choc.Abs.Break }
      | 'continue' { Choc.Abs.Continue }

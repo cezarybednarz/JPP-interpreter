@@ -34,7 +34,7 @@ Grammar
 	Stmt -> 'return' ';'                               (25)
 	Stmt -> 'if' '(' Expr ')' Block                    (26)
 	Stmt -> 'if' '(' Expr ')' Block 'else' Block       (27)
-	Stmt -> 'while' '(' Expr ')' Stmt                  (28)
+	Stmt -> 'while' '(' Expr ')' Block                 (28)
 	Stmt -> Expr ';'                                   (29)
 	Stmt -> 'break'                                    (30)
 	Stmt -> 'continue'                                 (31)
@@ -1145,7 +1145,7 @@ State 61
 
 State 62
 
-	Stmt -> 'while' . '(' Expr ')' Stmt                 (rule 28)
+	Stmt -> 'while' . '(' Expr ')' Block                (rule 28)
 
 	'('            shift, and enter state 67
 
@@ -1216,7 +1216,7 @@ State 66
 
 State 67
 
-	Stmt -> 'while' '(' . Expr ')' Stmt                 (rule 28)
+	Stmt -> 'while' '(' . Expr ')' Block                (rule 28)
 
 	'!'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -2363,54 +2363,18 @@ State 129
 
 State 130
 
-	Stmt -> 'while' '(' Expr . ')' Stmt                 (rule 28)
+	Stmt -> 'while' '(' Expr . ')' Block                (rule 28)
 
 	')'            shift, and enter state 131
 
 
 State 131
 
-	Stmt -> 'while' '(' Expr ')' . Stmt                 (rule 28)
+	Stmt -> 'while' '(' Expr ')' . Block                (rule 28)
 
-	'!'            shift, and enter state 50
-	'('            shift, and enter state 51
-	'-'            shift, and enter state 52
-	';'            shift, and enter state 53
-	'boolean'      shift, and enter state 7
-	'break'        shift, and enter state 54
-	'continue'     shift, and enter state 55
-	'false'        shift, and enter state 56
-	'function'     shift, and enter state 8
-	'if'           shift, and enter state 57
-	'int'          shift, and enter state 9
-	'lambda'       shift, and enter state 58
-	'print'        shift, and enter state 59
-	'return'       shift, and enter state 60
-	'string'       shift, and enter state 10
-	'true'         shift, and enter state 61
-	'void'         shift, and enter state 11
-	'while'        shift, and enter state 62
 	'{'            shift, and enter state 31
-	L_Ident        shift, and enter state 2
-	L_integ        shift, and enter state 63
-	L_quoted       shift, and enter state 64
 
-	Ident          goto state 33
-	Integer        goto state 34
-	String         goto state 35
-	TopDef         goto state 36
-	Block          goto state 37
-	Stmt           goto state 148
-	Type           goto state 40
-	ArrExpr        goto state 41
-	Expr6          goto state 42
-	Expr5          goto state 43
-	Expr4          goto state 44
-	Expr3          goto state 45
-	Expr2          goto state 46
-	Expr1          goto state 47
-	Expr           goto state 48
-	Lambda         goto state 49
+	Block          goto state 148
 
 State 132
 
@@ -2746,7 +2710,7 @@ State 147
 
 State 148
 
-	Stmt -> 'while' '(' Expr ')' Stmt .                 (rule 28)
+	Stmt -> 'while' '(' Expr ')' Block .                (rule 28)
 
 	'!'            reduce using rule 28
 	'('            reduce using rule 28

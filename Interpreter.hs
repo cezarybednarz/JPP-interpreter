@@ -23,7 +23,7 @@ instance Show Val where
 
 -- RetInfo
 
-data RetInfo = Return Val | ReturnNothing | Break | Continue
+data RetInfo = Return Val | ReturnNothing | RBreak | RContinue
 
 -- Memory and Enviroment --
 type Loc = Int
@@ -349,12 +349,24 @@ execStmt (CondElse expr (Block b1) (Block b2)) = do
     leaveScope
     return retVal
 
-execStmt (While expr s) = throwError "While not implemented"
-execStmt (SExp expr) = throwError "SExp not implemented"
-execStmt Choc.Abs.Break = throwError "Break not implemented"
-execStmt Choc.Abs.Continue = throwError "Continue not implemented"
+execStmt (While expr (Block b)) = do
+  VBool c <- evalExpr expr
+  if c then do
+    enterScope
+    retVal <- execBlock b
+    leaveScope
+    case retVal of 
+      RBreak -> return ReturnNothing
+      Return val -> return (Return val)
+      _ -> execStmt (While expr (Block b))
+  else 
+    return ReturnNothing
+
+execStmt (SExp expr) = evalExpr expr >> return ReturnNothing
+execStmt Break = return RBreak
+execStmt Continue = return RContinue
 execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
 execStmt (SPrint expr) = do
   val <- evalExpr expr
-  liftIO $ putStrLn $ show val
+  liftIO $ putStr $ show val
   return ReturnNothing

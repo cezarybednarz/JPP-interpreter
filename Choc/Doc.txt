@@ -78,7 +78,7 @@ All other symbols are terminals.
   |  |  **|**  | ``return`` ``;``
   |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Block//
   |  |  **|**  | ``if`` ``(`` //Expr// ``)`` //Block// ``else`` //Block//
-  |  |  **|**  | ``while`` ``(`` //Expr// ``)`` //Stmt//
+  |  |  **|**  | ``while`` ``(`` //Expr// ``)`` //Block//
   |  |  **|**  | //Expr// ``;``
   |  |  **|**  | ``break``
   |  |  **|**  | ``continue``

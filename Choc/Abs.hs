@@ -36,7 +36,7 @@ data Stmt
     | VRet
     | Cond Expr Block
     | CondElse Expr Block Block
-    | While Expr Stmt
+    | While Expr Block
     | SExp Expr
     | Break
     | Continue
