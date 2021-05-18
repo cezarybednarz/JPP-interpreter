@@ -5,7 +5,7 @@ import Data.Map.Lazy as LazyMap ()
 import System.Exit ( exitFailure, exitSuccess )
 import Chococino.Par ( pProgram, myLexer )
 import System.IO ( stderr, hPutStrLn )
-import Interpreter ( interpretProgram )
+import Interpreter ( interpretProgram, Val(VInt) ) 
 
 main :: IO ()
 main = do
@@ -25,7 +25,7 @@ main = do
             output <- interpretProgram parseTree
             case output of 
               Left message -> hPutStrLn stderr message
-              Right (exitCode, _) -> do
+              Right (VInt exitCode, _) -> do
                 if exitCode /= 0
                   then hPutStrLn stderr $ "Error, exit code: " ++ show exitCode
                 else

@@ -112,9 +112,9 @@ leaveScope = do
   env <- getEnv
   scope <- popScope
   -- TODO: free scope vars
-  let scopeLocs = catMaybes $ Map.map (flip lookupEnv env) scope
+  let scopeLocs = catMaybes $ Prelude.map (flip lookupEnv env) scope
   mapM_ free scopeLocs
-  let env' = Map.foldr (\n e -> Map.update pop n e)env scope
+  let env' = Prelude.foldr (\n e -> Map.update pop n e) env scope
   putEnv env' where
     pop :: [Loc] -> Maybe [Loc]
     pop [] = Nothing
@@ -145,7 +145,7 @@ getIdentLoc :: Ident -> IM Loc
 getIdentLoc n =  do
   env <- getEnv
   let res  = lookupEnv n env
-  maybe (throwError $ unwords["Undefined var",n,"env is",show env]) return res
+  maybe (throwError $ unwords["Undefined var",show n,"env is",show env]) return res
 
 getVar :: Ident -> IM Val
 getVar v =  do
@@ -157,8 +157,14 @@ getVar v =  do
 -- run interpreter --
 
 interpretProgram :: Program -> IO (Either String (Val, IntState))
-interpretProgram (Program program) = 
-  addTopDefs program >> runIM (evalExpr $ EApp (Ident "main") []) initState
+interpretProgram program = 
+  runIM (runMain program) initState
+
+
+runMain :: Program -> IM Val
+runMain (Program tds) = do
+  addTopDefs tds
+  evalExpr $ EApp (Ident "main") []
 
 -- TopDef --
 
@@ -173,18 +179,18 @@ addTopDefs = Prelude.foldr ((>>) . addTopDef) (return ())
 -- Expr --
 
 declFunctionArgs :: [Expr] -> [Arg] -> IM ()
-declFunctionArgs exprs@(e:xe) args@(a:xa) =
-  if length exprs /= length args then
-    throwError "number of arguments don't match"
-  else do
-    v <- evalExpr e
-    case a of
-      (ArgNoRef t id) -> do
-        l <- createVar id
-        updateStore l v
-      (ArgRef t id) -> do
-        l <- createVar id
-        updateStore l v
+declFunctionArgs [] [] = return ()
+declFunctionArgs [] (a:xa) = throwError "number of arguments don't match"
+declFunctionArgs (e:xe) [] = throwError "number of arguments don't match"
+declFunctionArgs (e:xe) (a:xa) = do
+  v <- evalExpr e
+  case a of
+    (ArgNoRef t id) -> do
+      l <- createVar id
+      updateStore l v
+    (ArgRef t id) -> do -- todo change to reference
+      l <- createVar id
+      updateStore l v
 
 
 evalExpr :: Expr -> IM Val
@@ -221,9 +227,10 @@ execBlock (s:ss) = do
 declItem :: Type -> Item -> IM ()
 declItem t (NoInit id) = do
   n <- case t of
-    Int -> 0
-    Bool -> 0
-    _ -> 0 -- todo default value for Str
+    Int -> return (VInt 0)
+    Bool -> return (VBool False)
+    Str -> return (VString "")
+    -- todo maybe other default values
   l <- createVar id
   updateStore l n
 
