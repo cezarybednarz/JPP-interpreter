@@ -113,7 +113,6 @@ popScope = do
   putScopes scopes
   return scope
 
-
 enterScope :: IM ()
 enterScope = modifyScopes (emptyScope:)
 
@@ -223,7 +222,7 @@ andVBool :: Val -> Val -> Val
 andVBool (VBool a) (VBool b) = VBool (a && b)
 
 orVBool :: Val -> Val -> Val
-orVBool (VBool a) (VBool b) = VBool (a && b)
+orVBool (VBool a) (VBool b) = VBool (a || b)
 
 declFunctionArgs :: [Expr] -> [Arg] -> IM ()
 declFunctionArgs [] [] = return ()
@@ -238,7 +237,6 @@ declFunctionArgs (e:xe) (a:xa) = do
     (ArgRef t id) -> do -- todo change to reference
       l <- createVar id
       updateStore l v
-
 
 -- Evaluate Expr --
 
@@ -268,6 +266,7 @@ evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (ERel expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2 
 evalExpr (ELambda l) = throwError "ELambda not implemented"
+
 
 -- Stmt --
 
@@ -299,17 +298,32 @@ declItem t (Init id e) = do
 execDecl :: Type -> [Item] -> IM ()
 execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 
--- execution Stmt -- 
+-- Execute Stmt -- 
 
 execStmt :: Stmt -> IM RetInfo
 execStmt Empty = return ReturnNothing
 execStmt (BStmt (Block b)) = execBlock b
 execStmt (Decl t items) = execDecl t items >> return ReturnNothing
 execStmt (ArrDecl t aExpr) = throwError "ArrDecl not implemented"
-execStmt (Ass id expr) = throwError "Ass not implemented"
+execStmt (Ass id expr) = do
+  n <- evalExpr expr
+  l <- createVar id
+  updateStore l n 
+  return ReturnNothing 
+
 execStmt (ArrAss arrExpr expr) = throwError "ArrAss not implemented"
-execStmt (Incr id) = throwError "Incr not implemented"
-execStmt (Decr id) = throwError "Decr not implemented"
+execStmt (Incr id) = do
+  VInt v <- getVar id
+  l <- getIdentLoc id
+  updateStore l (VInt $ v + 1)
+  return ReturnNothing
+
+execStmt (Decr id) = do
+  VInt v <- getVar id
+  l <- getIdentLoc id
+  updateStore l (VInt $ v - 1)
+  return ReturnNothing
+
 execStmt (Ret expr) = Return <$> evalExpr expr
 execStmt VRet = throwError "VRet not implemented"
 execStmt (Cond expr b) = throwError "Cond not implemented"

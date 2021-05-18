@@ -1,0 +1,17 @@
+int main() {
+  int x = 4;
+  print(x);
+  x++;
+  print(x);
+  x--;
+  print(x);
+  x = x + 1;
+  print(x);
+  x = x - 1;
+  print(x);
+  int y;
+  print(y);
+  y = x;
+  print(y);
+  return 0;
+}
