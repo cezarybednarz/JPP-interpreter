@@ -157,7 +157,7 @@ getVar v =  do
 -- run interpreter --
 
 interpretProgram :: Program -> IO (Either String (Val, IntState))
-interpretProgram program = 
+interpretProgram program =
   runIM (runMain program) initState
 
 
@@ -248,4 +248,18 @@ execStmt :: Stmt -> IM RetInfo
 execStmt Empty = return ReturnNothing
 execStmt (BStmt (Block b)) = execBlock b
 execStmt (Decl t items) = execDecl t items >> return ReturnNothing
--- todo cala reszta
+execStmt (ArrDecl t aExpr) = throwError "ArrDecl not implemented"
+execStmt (Ass id expr) = throwError "Ass not implemented"
+execStmt (ArrAss arrExpr expr) = throwError "ArrAss not implemented"
+execStmt (Incr id) = throwError "Incr not implemented"
+execStmt (Decr id) = throwError "Decr not implemented"
+execStmt (Ret expr) = Return <$> evalExpr expr
+execStmt VRet = throwError "VRet not implemented"
+execStmt (Cond expr b) = throwError "Cond not implemented"
+execStmt (CondElse expr b1 b2) = throwError "CondElse not implemented"
+execStmt (While expr s) = throwError "While not implemented"
+execStmt (SExp expr) = throwError "SExp not implemented"
+execStmt Chococino.Abs.Break = throwError "Break not implemented"
+execStmt Chococino.Abs.Continue = throwError "Continue not implemented"
+execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
+
