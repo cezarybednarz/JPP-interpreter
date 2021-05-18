@@ -7,5 +7,6 @@ int main() {
   else {
     x = 5;
   }
-  printInt(x);
+  print(x);
+  return 0;
 }

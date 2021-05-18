@@ -325,9 +325,30 @@ execStmt (Decr id) = do
   return ReturnNothing
 
 execStmt (Ret expr) = Return <$> evalExpr expr
-execStmt VRet = throwError "VRet not implemented"
-execStmt (Cond expr b) = throwError "Cond not implemented"
-execStmt (CondElse expr b1 b2) = throwError "CondElse not implemented"
+execStmt VRet = return $ Return VNull
+execStmt (Cond expr (Block b)) = do
+  VBool c <- evalExpr expr
+  if c then do
+    enterScope
+    retVal <- execBlock b
+    leaveScope
+    return retVal
+  else
+    return ReturnNothing
+  
+execStmt (CondElse expr (Block b1) (Block b2)) = do
+  VBool c <- evalExpr expr
+  if c then do
+    enterScope
+    retVal <- execBlock b1
+    leaveScope
+    return retVal
+  else do
+    enterScope
+    retVal <- execBlock b2
+    leaveScope
+    return retVal
+
 execStmt (While expr s) = throwError "While not implemented"
 execStmt (SExp expr) = throwError "SExp not implemented"
 execStmt Choc.Abs.Break = throwError "Break not implemented"
