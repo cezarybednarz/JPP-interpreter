@@ -16,11 +16,11 @@ import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad      ( when )
 
-import Chococino.Abs   ()
-import Chococino.Lex   ( Token )
-import Chococino.Par   ( pProgram, myLexer )
-import Chococino.Print ( Print, printTree )
-import Chococino.Skel  ()
+import Choc.Abs   ()
+import Choc.Lex   ( Token )
+import Choc.Par   ( pProgram, myLexer )
+import Choc.Print ( Print, printTree )
+import Choc.Skel  ()
 
 type Err        = Either String
 type ParseFun a = [Token] -> Err a

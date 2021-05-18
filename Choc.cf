@@ -30,6 +30,7 @@ SExp.      Stmt ::= Expr  ";" ;
 Break.     Stmt ::= "break" ;
 Continue.  Stmt ::= "continue" ;
 FnNestDef. Stmt ::= TopDef ";" ;
+SPrint.    Stmt  ::= "print" "(" Expr ")" ";" ;
 
 -- Types ---------------------------------------------------
 Int.       Type ::= "int" ;

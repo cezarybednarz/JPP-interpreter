@@ -4,7 +4,7 @@ module Interpreter where
 
 
 import Data.Map as Map
-import Chococino.Abs
+import Choc.Abs
 import Control.Monad.State
 import Control.Monad.Error
 import Data.Maybe(catMaybes)
@@ -259,7 +259,7 @@ execStmt (Cond expr b) = throwError "Cond not implemented"
 execStmt (CondElse expr b1 b2) = throwError "CondElse not implemented"
 execStmt (While expr s) = throwError "While not implemented"
 execStmt (SExp expr) = throwError "SExp not implemented"
-execStmt Chococino.Abs.Break = throwError "Break not implemented"
-execStmt Chococino.Abs.Continue = throwError "Continue not implemented"
+execStmt Choc.Abs.Break = throwError "Break not implemented"
+execStmt Choc.Abs.Continue = throwError "Continue not implemented"
 execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
 

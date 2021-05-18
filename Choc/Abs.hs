@@ -3,9 +3,9 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
--- | The abstract syntax of language Chococino.
+-- | The abstract syntax of language Choc.
 
-module Chococino.Abs where
+module Choc.Abs where
 
 import Prelude (Integer, String)
 import qualified Prelude as C (Eq, Ord, Show, Read)
@@ -41,6 +41,7 @@ data Stmt
     | Break
     | Continue
     | FnNestDef TopDef
+    | SPrint Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Item = NoInit Ident | Init Ident Expr

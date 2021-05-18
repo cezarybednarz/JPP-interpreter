@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP,MagicHash #-}
-{-# LINE 3 "Chococino/Lex.x" #-}
+{-# LINE 3 "Choc/Lex.x" #-}
 
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_GHC -w #-}
-module Chococino.Lex where
+module Choc.Lex where
 
 import Prelude
 
@@ -95,7 +95,7 @@ alex_actions = array (0 :: Int, 9)
   , (0,alex_action_5)
   ]
 
-{-# LINE 44 "Chococino/Lex.x" #-}
+{-# LINE 44 "Choc/Lex.x" #-}
 
 
 tok :: (Posn -> String -> Token) -> (Posn -> String -> Token)
@@ -160,7 +160,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b ">=" 21 (b "," 11 (b "(" 6 (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "&&" 5 (b "&" 4 N N) N)) (b "+" 9 (b "*" 8 (b ")" 7 N N) N) (b "++" 10 N N))) (b "<" 16 (b "/" 14 (b "--" 13 (b "-" 12 N N) N) (b ";" 15 N N)) (b "==" 19 (b "=" 18 (b "<=" 17 N N) N) (b ">" 20 N N)))) (b "int" 31 (b "continue" 26 (b "boolean" 24 (b "]" 23 (b "[" 22 N N) N) (b "break" 25 N N)) (b "function" 29 (b "false" 28 (b "else" 27 N N) N) (b "if" 30 N N))) (b "void" 36 (b "string" 34 (b "return" 33 (b "lambda" 32 N N) N) (b "true" 35 N N)) (b "||" 39 (b "{" 38 (b "while" 37 N N) N) (b "}" 40 N N))))
+resWords = b ">=" 21 (b "," 11 (b "(" 6 (b "%" 3 (b "!=" 2 (b "!" 1 N N) N) (b "&&" 5 (b "&" 4 N N) N)) (b "+" 9 (b "*" 8 (b ")" 7 N N) N) (b "++" 10 N N))) (b "<" 16 (b "/" 14 (b "--" 13 (b "-" 12 N N) N) (b ";" 15 N N)) (b "==" 19 (b "=" 18 (b "<=" 17 N N) N) (b ">" 20 N N)))) (b "lambda" 32 (b "else" 27 (b "boolean" 24 (b "]" 23 (b "[" 22 N N) N) (b "continue" 26 (b "break" 25 N N) N)) (b "if" 30 (b "function" 29 (b "false" 28 N N) N) (b "int" 31 N N))) (b "void" 37 (b "string" 35 (b "return" 34 (b "print" 33 N N) N) (b "true" 36 N N)) (b "||" 40 (b "{" 39 (b "while" 38 N N) N) (b "}" 41 N N))))
    where b s n = let bs = s
                  in  B bs (TS bs n)
 

@@ -3,7 +3,7 @@ module Main where
 import System.Environment ( getArgs )
 import Data.Map.Lazy as LazyMap ()
 import System.Exit ( exitFailure, exitSuccess )
-import Chococino.Par ( pProgram, myLexer )
+import Choc.Par ( pProgram, myLexer )
 import System.IO ( stderr, hPutStrLn )
 import Interpreter ( interpretProgram, Val(VInt) ) 
 
