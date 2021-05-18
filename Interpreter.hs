@@ -9,13 +9,23 @@ import Control.Monad.State
 import Control.Monad.Error
 import Data.Maybe(catMaybes)
 
--- types --n
+-- Val --
 
 data Val = VInt Integer | VBool Bool | VString String | VFunc Type Ident [Arg] Block | VNull
   deriving (Eq, Ord)
 
+instance Show Val where
+  show (VInt val) = show val
+  show (VBool b) = show b
+  show (VString str) = show str
+  show (VFunc env id args block) = "Func" ++ show id
+  show VNull = "Null"
+
+-- RetInfo
+
 data RetInfo = Return Val | ReturnNothing | Break | Continue
 
+-- Memory and Enviroment --
 type Loc = Int
 type Env = Map.Map Ident [Loc]
 type Store = Map.Map Loc Val
@@ -29,7 +39,7 @@ data IntState = IntState {
   scopes :: Scopes
 }
 
--- init enviroment --
+-- Init Enviroment --
 
 initStore :: Store
 initStore = Map.empty
@@ -52,7 +62,7 @@ type IM a = StateT IntState (ErrorT String IO) a
 runIM :: IM a -> IntState -> IO (Either String (a, IntState))
 runIM m st = runErrorT (runStateT m st)
 
--- memory management -- 
+-- Memory Management -- 
 
 alloc :: IM Loc
 alloc = do
@@ -194,9 +204,10 @@ declFunctionArgs (e:xe) (a:xa) = do
 
 
 evalExpr :: Expr -> IM Val
+evalExpr (EVar id) = getVar id
 evalExpr (ELitInt i) = return (VInt i)
--- evalExpr (ELiTrue b)
--- evalExpr (ELitFalse b)
+evalExpr ELitTrue = throwError "ELitTrue not implemented"
+evalExpr ELitFalse = throwError "ELiFalse not implemented"
 
 evalExpr (EApp id exprs) = do
   enterScope
@@ -208,8 +219,9 @@ evalExpr (EApp id exprs) = do
     Return val -> return val
     _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
 
--- evalExpr (EString s) 
--- evalExpr (EArr arr)
+evalExpr (EString s) = throwError "EString not implemented"
+evalExpr (EArr arr) = throwError "EArr not implemented"
+
 
 
 -- Stmt --
@@ -262,4 +274,7 @@ execStmt (SExp expr) = throwError "SExp not implemented"
 execStmt Choc.Abs.Break = throwError "Break not implemented"
 execStmt Choc.Abs.Continue = throwError "Continue not implemented"
 execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
-
+execStmt (SPrint expr) = do
+  val <- evalExpr expr
+  liftIO $ putStrLn $ show val
+  return ReturnNothing
