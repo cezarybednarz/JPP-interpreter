@@ -186,12 +186,49 @@ addTopDef (FnDef t id args b) = do
 addTopDefs :: [TopDef] -> IM ()
 addTopDefs = Prelude.foldr ((>>) . addTopDef) (return ())
 
--- Expr --
+-- Expr Helpers --
+
+negVInt :: Val -> Val
+negVInt (VInt i) = VInt (-i)
+
+notVBool :: Val -> Val
+notVBool (VBool b) = VBool (not b)
+
+relVInt :: RelOp -> Val -> Val -> Val
+relVInt LTH (VInt a) (VInt b) = VBool (a < b)
+relVInt LE (VInt a) (VInt b) = VBool (a <= b)
+relVInt GTH (VInt a) (VInt b) = VBool (a > b)
+relVInt GE (VInt a) (VInt b) = VBool (a >= b)
+relVInt EQU (VInt a) (VInt b) = VBool (a == b)
+relVInt NE (VInt a) (VInt b) = VBool (a /= b)
+
+addVInt :: AddOp -> Val -> Val -> Val
+addVInt Plus (VInt a) (VInt b) = VInt (a + b)
+addVInt Minus (VInt a) (VInt b) = VInt (a - b)
+
+mulVInt :: MulOp -> Val -> Val -> Val
+mulVInt Times (VInt a) (VInt b) = VInt (a * b)
+mulVInt Div (VInt a) (VInt b) =
+  if b == 0 then
+    error "Division by 0"
+  else
+    VInt (a `div` b)
+mulVInt Mod (VInt a) (VInt b) =
+  if b == 0 then
+    error "Modulo by 0"
+  else
+    VInt (a `mod` b)
+
+andVBool :: Val -> Val -> Val
+andVBool (VBool a) (VBool b) = VBool (a && b)
+
+orVBool :: Val -> Val -> Val
+orVBool (VBool a) (VBool b) = VBool (a && b)
 
 declFunctionArgs :: [Expr] -> [Arg] -> IM ()
 declFunctionArgs [] [] = return ()
-declFunctionArgs [] (a:xa) = throwError "number of arguments don't match"
-declFunctionArgs (e:xe) [] = throwError "number of arguments don't match"
+declFunctionArgs [] (a:xa) = throwError "Number of arguments don't match"
+declFunctionArgs (e:xe) [] = throwError "Number of arguments don't match"
 declFunctionArgs (e:xe) (a:xa) = do
   v <- evalExpr e
   case a of
@@ -203,11 +240,13 @@ declFunctionArgs (e:xe) (a:xa) = do
       updateStore l v
 
 
+-- Evaluate Expr --
+
 evalExpr :: Expr -> IM Val
 evalExpr (EVar id) = getVar id
 evalExpr (ELitInt i) = return (VInt i)
-evalExpr ELitTrue = throwError "ELitTrue not implemented"
-evalExpr ELitFalse = throwError "ELiFalse not implemented"
+evalExpr ELitTrue = return (VBool True)
+evalExpr ELitFalse = return (VBool False)
 
 evalExpr (EApp id exprs) = do
   enterScope
@@ -219,13 +258,15 @@ evalExpr (EApp id exprs) = do
     Return val -> return val
     _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
 
-evalExpr (EString s) = throwError "EString not implemented"
+evalExpr (EString s) = return (VString s)
 evalExpr (EArr arr) = throwError "EArr not implemented"
-evalExpr (Neg expr) = throwError "Neg not implemented"
-evalExpr (EMul expr1 op expr2) = throwError "EMul not implemented"
-evalExpr (EAdd expr1 op expr2) = throwError "EAdd not implemented"
-evalExpr (EAnd expr1 expr2) = throwError "EAnd not implemented"
-evalExpr (EOr expr1 expr2) = throwError "EOr not implemented"
+evalExpr (Neg expr) = negVInt <$> evalExpr expr
+evalExpr (Not expr) = notVBool <$> evalExpr expr
+evalExpr (EMul expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EAdd expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2 
+evalExpr (ERel expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2 
 evalExpr (ELambda l) = throwError "ELambda not implemented"
 
 -- Stmt --
