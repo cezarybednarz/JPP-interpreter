@@ -129,7 +129,6 @@ leaveScope = do
   mapM_ free scopeLocs
   let env' = Prelude.foldr (\n e -> Map.update pop n e) env scope
   putEnv env' where
-    pop :: [Loc] -> Maybe [Loc]
     pop [] = Nothing
     pop (x:xs) = Just xs
 
