@@ -7,11 +7,16 @@ import Data.Map as Map
 import Choc.Abs
 import Control.Monad.State
 import Control.Monad.Error
-import Data.Maybe(catMaybes)
-
+import Data.Maybe
 -- Val --
 
-data Val = VInt Integer | VBool Bool | VString String | VFunc Type Ident [Arg] Block | VNull
+data Val
+    = VInt Integer
+    | VBool Bool
+    | VString String
+    | VFunc Type Ident [Arg] Block
+    | VNull
+    | VArr Type Ident [Val] [Val]
   deriving (Eq, Ord)
 
 instance Show Val where
@@ -262,9 +267,9 @@ evalExpr (Neg expr) = negVInt <$> evalExpr expr
 evalExpr (Not expr) = notVBool <$> evalExpr expr
 evalExpr (EMul expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (EAdd expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2 
+evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (ERel expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2 
+evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (ELambda l) = throwError "ELambda not implemented"
 
 
@@ -279,14 +284,12 @@ execBlock (s:ss) = do
     ReturnNothing -> execBlock ss
     breakOrCont -> return breakOrCont
 
-
 declItem :: Type -> Item -> IM ()
 declItem t (NoInit id) = do
   n <- case t of
     Int -> return (VInt 0)
     Bool -> return (VBool False)
     Str -> return (VString "")
-    -- todo maybe other default values
   l <- createVar id
   updateStore l n
 
@@ -298,18 +301,29 @@ declItem t (Init id e) = do
 execDecl :: Type -> [Item] -> IM ()
 execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 
+declArray :: Type -> ArrExpr -> [Val] -> Integer -> IM ()
+declArray t (FirstDim id e) dims size = do
+  val <- evalExpr e
+  l <- createVar id
+  updateStore l (VArr t id dims (replicate (fromIntegral size) (VInt 0)))
+
+declArray t (MultDim arrExpr e) dims prod = do
+  (VInt val) <- evalExpr e
+  declArray t arrExpr (VInt val:dims) (prod * val)
+
+
 -- Execute Stmt -- 
 
 execStmt :: Stmt -> IM RetInfo
 execStmt Empty = return ReturnNothing
 execStmt (BStmt (Block b)) = execBlock b
 execStmt (Decl t items) = execDecl t items >> return ReturnNothing
-execStmt (ArrDecl t aExpr) = throwError "ArrDecl not implemented"
+execStmt (ArrDecl t aExpr) = declArray t aExpr [] 1 >> return ReturnNothing
 execStmt (Ass id expr) = do
   n <- evalExpr expr
   l <- createVar id
-  updateStore l n 
-  return ReturnNothing 
+  updateStore l n
+  return ReturnNothing
 
 execStmt (ArrAss arrExpr expr) = throwError "ArrAss not implemented"
 execStmt (Incr id) = do
@@ -335,7 +349,7 @@ execStmt (Cond expr (Block b)) = do
     return retVal
   else
     return ReturnNothing
-  
+
 execStmt (CondElse expr (Block b1) (Block b2)) = do
   VBool c <- evalExpr expr
   if c then do
@@ -355,11 +369,11 @@ execStmt (While expr (Block b)) = do
     enterScope
     retVal <- execBlock b
     leaveScope
-    case retVal of 
+    case retVal of
       RBreak -> return ReturnNothing
       Return val -> return (Return val)
       _ -> execStmt (While expr (Block b))
-  else 
+  else
     return ReturnNothing
 
 execStmt (SExp expr) = evalExpr expr >> return ReturnNothing

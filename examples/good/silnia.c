@@ -15,5 +15,8 @@ int main() {
     print("\n");
     i++;
   }
+  print(i);
+  i = 69;
+  print(i);
   return 0;
 }

@@ -39,4 +39,5 @@ distclean : clean
 
 main:
 	ghc --make Main.hs
+
 # EOF
