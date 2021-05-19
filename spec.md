@@ -15,6 +15,7 @@
  - Trochę mam popsutą obsługe środowisk zmiennych: wywołująć funkcję z poza maina dostaje ona całe środowisko zmiennych które było w mainie, muszę to naprawić. Z tego powodu nie udało mi się jeszcze zaimplementować przekazywania zmiennych przez referencję (ale w gramatyce już rozpatruję ten przypadek)
  - Obsługa błędów jest trochę okrojona. Nie dodałem jescze numerów linii do komunikatów błędów oraz nie obsluguję jeszcze wszystkich błędów
  - Mam w planach implementowanie punktów `(funkcje zagnieżdżone ze statycznym wiązaniem)` i `(funkcje wyższego rzędu, anonimowe, domknięcia)`, póki co definiowanie takich rzeczy kończy się błędem wykonania
+ - zamiany monady error na monadę except (teraz monada rzuca warningami)
 
 ### Opis języka
  - Język gramatycznie jest oparty na podanej gramatyce języka [Latte](https://www.mimuw.edu.pl/~ben/Zajecia/Mrj2020/Latte/), więc jest podobny do Javy
@@ -24,6 +25,7 @@
  - Dostępne są lambdy, np: `labda <int (int a, int b)> { return a + b; }`
  - Żeby przekazać funkcję jako parametr musimy użyć składni jak `std::function` w C++: na przykład: `function<int(string, string)> f`, co znaczy że funkcja f zwraca `int` i przyjmuje dwa argumenty `string`
  - Dostępne są również tablice, takie jak w C, tylko przypisanie może odbywać się tylko element po elemencie: np. `t[3] = 2`
+ - Dodam więcej przykładów do /exaples/good i dodam wszystkie przyklady do /examples/bad
 
 
 ### Tabelka funkcjonalności

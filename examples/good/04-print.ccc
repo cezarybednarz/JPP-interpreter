@@ -1,5 +1,4 @@
 int main() {
-  int x = 4;
-  x++;
+  print("print dziala");
   return 0;
 }

@@ -1,5 +1,4 @@
 int main() {
-  int x = 4;
-  print(x);
+  print(1/0);
   return 0;
 }
