@@ -40,26 +40,24 @@ import Choc.Lex
   '==' { PT _ (TS _ 19) }
   '>' { PT _ (TS _ 20) }
   '>=' { PT _ (TS _ 21) }
-  '[' { PT _ (TS _ 22) }
-  ']' { PT _ (TS _ 23) }
-  'boolean' { PT _ (TS _ 24) }
-  'break' { PT _ (TS _ 25) }
-  'continue' { PT _ (TS _ 26) }
-  'else' { PT _ (TS _ 27) }
-  'false' { PT _ (TS _ 28) }
-  'function' { PT _ (TS _ 29) }
-  'if' { PT _ (TS _ 30) }
-  'int' { PT _ (TS _ 31) }
-  'lambda' { PT _ (TS _ 32) }
-  'print' { PT _ (TS _ 33) }
-  'return' { PT _ (TS _ 34) }
-  'string' { PT _ (TS _ 35) }
-  'true' { PT _ (TS _ 36) }
-  'void' { PT _ (TS _ 37) }
-  'while' { PT _ (TS _ 38) }
-  '{' { PT _ (TS _ 39) }
-  '||' { PT _ (TS _ 40) }
-  '}' { PT _ (TS _ 41) }
+  'boolean' { PT _ (TS _ 22) }
+  'break' { PT _ (TS _ 23) }
+  'continue' { PT _ (TS _ 24) }
+  'else' { PT _ (TS _ 25) }
+  'false' { PT _ (TS _ 26) }
+  'function' { PT _ (TS _ 27) }
+  'if' { PT _ (TS _ 28) }
+  'int' { PT _ (TS _ 29) }
+  'lambda' { PT _ (TS _ 30) }
+  'print' { PT _ (TS _ 31) }
+  'return' { PT _ (TS _ 32) }
+  'string' { PT _ (TS _ 33) }
+  'true' { PT _ (TS _ 34) }
+  'void' { PT _ (TS _ 35) }
+  'while' { PT _ (TS _ 36) }
+  '{' { PT _ (TS _ 37) }
+  '||' { PT _ (TS _ 38) }
+  '}' { PT _ (TS _ 39) }
   L_Ident  { PT _ (TV $$) }
   L_integ  { PT _ (TI $$) }
   L_quoted { PT _ (TL $$) }
@@ -103,9 +101,7 @@ Stmt :: { Choc.Abs.Stmt }
 Stmt : ';' { Choc.Abs.Empty }
      | Block { Choc.Abs.BStmt $1 }
      | Type ListItem ';' { Choc.Abs.Decl $1 $2 }
-     | Type ArrExpr { Choc.Abs.ArrDecl $1 $2 }
      | Ident '=' Expr ';' { Choc.Abs.Ass $1 $3 }
-     | ArrExpr '=' Expr ';' { Choc.Abs.ArrAss $1 $3 }
      | Ident '++' ';' { Choc.Abs.Incr $1 }
      | Ident '--' ';' { Choc.Abs.Decr $1 }
      | 'return' Expr ';' { Choc.Abs.Ret $2 }
@@ -138,10 +134,6 @@ ListType : {- empty -} { [] }
          | Type { (:[]) $1 }
          | Type ',' ListType { (:) $1 $3 }
 
-ArrExpr :: { Choc.Abs.ArrExpr }
-ArrExpr : Ident '[' Expr ']' { Choc.Abs.FirstDim $1 $3 }
-        | ArrExpr '[' Expr ']' { Choc.Abs.MultDim $1 $3 }
-
 Expr6 :: { Choc.Abs.Expr }
 Expr6 : Ident { Choc.Abs.EVar $1 }
       | Integer { Choc.Abs.ELitInt $1 }
@@ -149,7 +141,6 @@ Expr6 : Ident { Choc.Abs.EVar $1 }
       | 'false' { Choc.Abs.ELitFalse }
       | Ident '(' ListExpr ')' { Choc.Abs.EApp $1 $3 }
       | String { Choc.Abs.EString $1 }
-      | ArrExpr { Choc.Abs.EArr $1 }
       | '(' Expr ')' { $2 }
 
 Expr5 :: { Choc.Abs.Expr }

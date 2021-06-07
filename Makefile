@@ -1,4 +1,3 @@
-
 all:
 	ghc --make Main.hs -o interpret
 
@@ -7,3 +6,5 @@ clean:
 	rm *.hi
 	rm *.o
 	rm *.bak
+
+

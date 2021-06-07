@@ -27,9 +27,7 @@ data Stmt
     = Empty
     | BStmt Block
     | Decl Type [Item]
-    | ArrDecl Type ArrExpr
     | Ass Ident Expr
-    | ArrAss ArrExpr Expr
     | Incr Ident
     | Decr Ident
     | Ret Expr
@@ -51,9 +49,6 @@ data Type
     = Int | Str | Bool | Void | Function Type [Type] | Fun Type [Type]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data ArrExpr = FirstDim Ident Expr | MultDim ArrExpr Expr
-  deriving (C.Eq, C.Ord, C.Show, C.Read)
-
 data Expr
     = EVar Ident
     | ELitInt Integer
@@ -61,7 +56,6 @@ data Expr
     | ELitFalse
     | EApp Ident [Expr]
     | EString String
-    | EArr ArrExpr
     | Neg Expr
     | Not Expr
     | EMul Expr MulOp Expr

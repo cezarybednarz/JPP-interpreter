@@ -16,7 +16,6 @@ data Val
     | VString String
     | VFunc Type Ident [Arg] Block
     | VNull
-    | VArr Type Ident [Val] [Val] -- first [Val] -> dimensions, second [Val] -> elements
   deriving (Eq, Ord)
 
 instance Show Val where
@@ -241,16 +240,6 @@ declFunctionArgs (e:xe) (a:xa) = do
       l <- createVar id
       updateStore l v
 
-evalArr :: ArrExpr -> [Val] -> IM Val
-evalArr (FirstDim id e) ids = do
-  VArr t  _ dims arr <- getVar id
-  len <- evalExpr e
-  return $ arr!!fromIntegral(calcArrayPlace dims (len:ids) (getProduct dims))
-
-evalArr (MultDim arrExpr e) ids = do
-  len <- evalExpr e
-  evalArr arrExpr (len:ids)
-
 -- Evaluate Expr --
 
 evalExpr :: Expr -> IM Val
@@ -270,7 +259,6 @@ evalExpr (EApp id exprs) = do
     _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
 
 evalExpr (EString s) = return (VString s)
-evalExpr (EArr aExpr) = evalArr aExpr []
 evalExpr (Neg expr) = negVInt <$> evalExpr expr
 evalExpr (Not expr) = notVBool <$> evalExpr expr
 evalExpr (EMul expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
@@ -308,58 +296,17 @@ declItem t (Init id e) = do
 execDecl :: Type -> [Item] -> IM ()
 execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
 
--- Arrays --
-
-replaceNth :: Integer -> Val -> [Val] -> [Val]
-replaceNth _ _ [] = []
-replaceNth n newVal (x:xs)
-  | n == 0 = newVal:xs
-  | otherwise = x:replaceNth (n-1) newVal xs
-
-declArray :: Type -> ArrExpr -> [Val] -> IM ()
-declArray t (FirstDim id e) dims = do
-  len <- evalExpr e
-  l <- createVar id
-  updateStore l (VArr t id (len:dims) (replicate (fromIntegral (getProduct (len:dims))) (VInt 0)))
-
-declArray t (MultDim arrExpr e) dims = do
-  len <- evalExpr e
-  declArray t arrExpr (len:dims)
-
-getProduct :: [Val] -> Integer
-getProduct [] = 1
-getProduct (VInt v:vs) = v * getProduct vs
-
-calcArrayPlace :: [Val] -> [Val] -> Integer -> Integer
-calcArrayPlace [] [] _ = 0
-calcArrayPlace ((VInt d):dims) ((VInt i):ids) size =
-  i * (size `div` d) + calcArrayPlace dims ids (size `div` d)
-
-execArrAss :: ArrExpr -> [Val] -> Expr -> IM ()
-execArrAss (FirstDim id e) ids expr = do
-  VArr t  _ dims arr <- getVar id
-  l <- getIdentLoc id
-  val <- evalExpr expr
-  len <- evalExpr e
-  updateStore l (VArr t id dims (replaceNth (calcArrayPlace dims (len:ids) (getProduct dims)) val arr))
-
-execArrAss (MultDim arrExpr e) ids expr = do
-  len <- evalExpr e
-  execArrAss arrExpr (len:ids) expr
-
 -- Execute Stmt -- 
 
 execStmt :: Stmt -> IM RetInfo
 execStmt Empty = return ReturnNothing
 execStmt (BStmt (Block b)) = execBlock b
 execStmt (Decl t items) = execDecl t items >> return ReturnNothing
-execStmt (ArrDecl t aExpr) = declArray t aExpr [] >> return ReturnNothing
 execStmt (Ass id expr) = do
   n <- evalExpr expr
   l <- createVar id
   updateStore l n
   return ReturnNothing
-execStmt (ArrAss arrExpr expr) = execArrAss arrExpr [] expr >> return ReturnNothing
 execStmt (Incr id) = do
   VInt v <- getVar id
   l <- getIdentLoc id

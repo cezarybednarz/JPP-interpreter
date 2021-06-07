@@ -39,9 +39,7 @@ transStmt x = case x of
   Choc.Abs.Empty -> failure x
   Choc.Abs.BStmt block -> failure x
   Choc.Abs.Decl type_ items -> failure x
-  Choc.Abs.ArrDecl type_ arrexpr -> failure x
   Choc.Abs.Ass ident expr -> failure x
-  Choc.Abs.ArrAss arrexpr expr -> failure x
   Choc.Abs.Incr ident -> failure x
   Choc.Abs.Decr ident -> failure x
   Choc.Abs.Ret expr -> failure x
@@ -69,11 +67,6 @@ transType x = case x of
   Choc.Abs.Function type_ types -> failure x
   Choc.Abs.Fun type_ types -> failure x
 
-transArrExpr :: Choc.Abs.ArrExpr -> Result
-transArrExpr x = case x of
-  Choc.Abs.FirstDim ident expr -> failure x
-  Choc.Abs.MultDim arrexpr expr -> failure x
-
 transExpr :: Choc.Abs.Expr -> Result
 transExpr x = case x of
   Choc.Abs.EVar ident -> failure x
@@ -82,7 +75,6 @@ transExpr x = case x of
   Choc.Abs.ELitFalse -> failure x
   Choc.Abs.EApp ident exprs -> failure x
   Choc.Abs.EString string -> failure x
-  Choc.Abs.EArr arrexpr -> failure x
   Choc.Abs.Neg expr -> failure x
   Choc.Abs.Not expr -> failure x
   Choc.Abs.EMul expr1 mulop expr2 -> failure x

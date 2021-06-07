@@ -146,9 +146,7 @@ instance Print Choc.Abs.Stmt where
     Choc.Abs.Empty -> prPrec i 0 (concatD [doc (showString ";")])
     Choc.Abs.BStmt block -> prPrec i 0 (concatD [prt 0 block])
     Choc.Abs.Decl type_ items -> prPrec i 0 (concatD [prt 0 type_, prt 0 items, doc (showString ";")])
-    Choc.Abs.ArrDecl type_ arrexpr -> prPrec i 0 (concatD [prt 0 type_, prt 0 arrexpr])
     Choc.Abs.Ass id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString "="), prt 0 expr, doc (showString ";")])
-    Choc.Abs.ArrAss arrexpr expr -> prPrec i 0 (concatD [prt 0 arrexpr, doc (showString "="), prt 0 expr, doc (showString ";")])
     Choc.Abs.Incr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "++"), doc (showString ";")])
     Choc.Abs.Decr id_ -> prPrec i 0 (concatD [prt 0 id_, doc (showString "--"), doc (showString ";")])
     Choc.Abs.Ret expr -> prPrec i 0 (concatD [doc (showString "return"), prt 0 expr, doc (showString ";")])
@@ -189,11 +187,6 @@ instance Print Choc.Abs.Type where
 instance Print [Choc.Abs.Type] where
   prt = prtList
 
-instance Print Choc.Abs.ArrExpr where
-  prt i = \case
-    Choc.Abs.FirstDim id_ expr -> prPrec i 0 (concatD [prt 0 id_, doc (showString "["), prt 0 expr, doc (showString "]")])
-    Choc.Abs.MultDim arrexpr expr -> prPrec i 0 (concatD [prt 0 arrexpr, doc (showString "["), prt 0 expr, doc (showString "]")])
-
 instance Print Choc.Abs.Expr where
   prt i = \case
     Choc.Abs.EVar id_ -> prPrec i 6 (concatD [prt 0 id_])
@@ -202,7 +195,6 @@ instance Print Choc.Abs.Expr where
     Choc.Abs.ELitFalse -> prPrec i 6 (concatD [doc (showString "false")])
     Choc.Abs.EApp id_ exprs -> prPrec i 6 (concatD [prt 0 id_, doc (showString "("), prt 0 exprs, doc (showString ")")])
     Choc.Abs.EString str -> prPrec i 6 (concatD [prt 0 str])
-    Choc.Abs.EArr arrexpr -> prPrec i 6 (concatD [prt 0 arrexpr])
     Choc.Abs.Neg expr -> prPrec i 5 (concatD [doc (showString "-"), prt 6 expr])
     Choc.Abs.Not expr -> prPrec i 5 (concatD [doc (showString "!"), prt 6 expr])
     Choc.Abs.EMul expr1 mulop expr2 -> prPrec i 4 (concatD [prt 4 expr1, prt 0 mulop, prt 5 expr2])
