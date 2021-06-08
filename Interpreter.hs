@@ -6,10 +6,10 @@ module Interpreter where
 import Data.Map as Map
 import Choc.Abs
 import Control.Monad.State
-import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.Except
 import Data.Maybe
+
 -- Func and Val --
 
 data Func = VFunc Type Ident [Arg] Block
@@ -20,6 +20,9 @@ data Val
     | VString String
     | VVoid
   deriving (Eq, Ord)
+
+instance Show Func where
+  show (VFunc _ id _ _) = show id
 
 instance Show Val where
   show (VInt val) = show val
@@ -114,8 +117,8 @@ interpretProgram program =
 
 runMain :: Program -> IM Val
 runMain (Program tds) = do
-  addTopDefs tds
-  evalExpr $ EApp (Ident "main") []
+  env <- addTopDefs tds
+  local (const env) $ evalExpr $ EApp (Ident "main") []
 
 -- TopDef --
 
