@@ -1,0 +1,16 @@
+
+void przypisz(int x, int &y) {
+  y = x;
+  return;
+}
+
+int main() {
+  int a = 3;
+  int b;
+  przypisz(a, b);
+  print(a);
+  print(b);
+  return 0;
+}
+
+

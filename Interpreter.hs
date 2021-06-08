@@ -10,6 +10,17 @@ import Control.Monad.Reader
 import Control.Monad.Except
 import Data.Maybe
 
+-- !debug --
+
+debug :: IM ()
+debug = do
+  (m1, m2) <- ask
+  store <- get
+  liftIO $ print $ "vars:  " ++ show m1
+  liftIO $ print $ "funcs: " ++ show m2
+  liftIO $ print $ "store: " ++ show store
+  liftIO $ print "-----"
+
 -- Func and Val --
 
 data Func = VFunc Type Ident [Arg] Block
@@ -110,7 +121,7 @@ getIdentVal id = do
 
 -- run interpreter --
 
-interpretProgram :: Program -> IO (Either String Val, Store) -- todo zmienic IntState
+interpretProgram :: Program -> IO (Either String Val, Store)
 interpretProgram program =
   runIM (runMain program) initStore initEnv
 
@@ -184,11 +195,11 @@ declFunctionArgs (e:xe) (a:xa) = do
       (_, funcEnv) <- ask
       valEnv' <- declareVar id v
       local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
-    (ArgRef t id) -> do 
+    (ArgRef t id) -> do
       l <- getIdentLoc id
       insertValue l v
       env <- ask
-      local(const env) $ declFunctionArgs xe xa
+      local (const env) $ declFunctionArgs xe xa
 
 -- Evaluate Expr --
 
@@ -203,7 +214,7 @@ evalExpr (EApp id exprs) = do
   env <- declFunctionArgs exprs args
   retVal <- local (const env) $ execBlock b
   case retVal of
-    Return val -> return val
+    (Return val, _) -> return val
     _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
 
 evalExpr (EString s) = return (VString s)
@@ -218,14 +229,17 @@ evalExpr (ELambda l) = throwError "ELambda not implemented"
 
 -- Stmt --
 
-execBlock :: [Stmt] -> IM RetInfo
-execBlock [] = return ReturnNothing
+execBlock :: [Stmt] -> IM (RetInfo, Env)
+execBlock [] = do
+  env <- ask
+  return (ReturnNothing, env)
 execBlock (s:ss) = do
   ret <- execStmt s
   case ret of
-    Return val -> return (Return val)
-    ReturnNothing -> execBlock ss
-    breakOrCont -> return breakOrCont
+    (Return val, env) -> return (Return val, env)
+    (ReturnNothing, env) -> do
+      local (const env) $ execBlock ss
+    (breakOrCont, env) -> return (breakOrCont, env)
 
 declItem :: Type -> Item -> IM Env
 declItem t (NoInit id) = do
@@ -242,42 +256,57 @@ declItem t (Init id e) = do
   valEnv <- declareVar id n
   return (valEnv, funcEnv)
 
-execDecl :: Type -> [Item] -> IM ()
-execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
+execDecl :: Type -> [Item] -> IM Env
+execDecl t [] = ask
+execDecl t (x:xs) = do
+  env <- declItem t x
+  local (const env) $ execDecl t xs
 
 -- Execute Stmt -- 
 
-execStmt :: Stmt -> IM RetInfo
-execStmt Empty = return ReturnNothing
+execStmt :: Stmt -> IM (RetInfo, Env)
+execStmt Empty = do
+  env <- ask
+  return (ReturnNothing, env)
 execStmt (BStmt (Block b)) = execBlock b
-execStmt (Decl t items) = execDecl t items >> return ReturnNothing
+execStmt (Decl t items) = do
+  env <- execDecl t items
+  return (ReturnNothing, env)
 execStmt (Ass id expr) = do
   n <- evalExpr expr
   l <- getIdentLoc id
+  env <- ask
   insertValue l n
-  return ReturnNothing
+  return (ReturnNothing, env)
 
 execStmt (Incr id) = do
   VInt v <- getIdentVal id
   l <- getIdentLoc id
+  env <- ask
   insertValue l (VInt $ v + 1)
-  return ReturnNothing
+  return (ReturnNothing, env)
 
 execStmt (Decr id) = do
   VInt v <- getIdentVal id
   l <- getIdentLoc id
+  env <- ask
   insertValue l (VInt $ v - 1)
-  return ReturnNothing
+  return (ReturnNothing, env)
 
-execStmt (Ret expr) = Return <$> evalExpr expr
-execStmt VRet = return $ Return VVoid
+execStmt (Ret expr) = do
+  e <- evalExpr expr
+  env <- ask
+  return (Return e, env)
+execStmt VRet = do
+  env <- ask
+  return (Return VVoid, env)
 execStmt (Cond expr (Block b)) = do
   VBool c <- evalExpr expr
+  env <- ask
   if c then do
-    env <- ask
     local (const env) $ execBlock b
   else
-    return ReturnNothing
+    return (ReturnNothing, env)
 
 execStmt (CondElse expr (Block b1) (Block b2)) = do
   VBool c <- evalExpr expr
@@ -291,19 +320,27 @@ execStmt (While expr (Block b)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
-    retVal <- local (const env) $ execBlock b
+    (retVal, _) <- local (const env) $ execBlock b
     case retVal of
-      RBreak -> return ReturnNothing
-      Return val -> return (Return val)
+      RBreak -> return (ReturnNothing, env)
+      Return val -> return (Return val, env)
       _ -> execStmt (While expr (Block b))
   else
-    return ReturnNothing
+    return (ReturnNothing, env)
 
-execStmt (SExp expr) = evalExpr expr >> return ReturnNothing
-execStmt Break = return RBreak
-execStmt Continue = return RContinue
+execStmt (SExp expr) = do
+  env <- ask
+  evalExpr expr
+  return (ReturnNothing, env)
+execStmt Break = do
+  env <- ask
+  return (RBreak, env)
+execStmt Continue = do
+  env <- ask
+  return (RContinue, env)
 execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
 execStmt (SPrint expr) = do
   val <- evalExpr expr
+  env <- ask
   liftIO $ print val
-  return ReturnNothing
+  return (ReturnNothing, env)
