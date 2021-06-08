@@ -7,169 +7,109 @@ import Data.Map as Map
 import Choc.Abs
 import Control.Monad.State
 import Control.Monad.Error
+import Control.Monad.Reader
+import Control.Monad.Except
 import Data.Maybe
--- Val --
+-- Func and Val --
+
+data Func = VFunc Type Ident [Arg] Block
 
 data Val
     = VInt Integer
     | VBool Bool
     | VString String
-    | VFunc Type Ident [Arg] Block
-    | VNull
+    | VVoid
   deriving (Eq, Ord)
 
 instance Show Val where
   show (VInt val) = show val
   show (VBool b) = show b
   show (VString str) = show str
-  show (VFunc env id args block) = "Func" ++ show id
-  show VNull = "Null"
+  show VVoid = show "Error: Cannot show void value"
 
--- RetInfo
+-- RetInfo --
 
 data RetInfo = Return Val | ReturnNothing | RBreak | RContinue
 
 -- Memory and Enviroment --
-type Loc = Int
-type Env = Map.Map Ident [Loc]
-type Store = Map.Map Loc Val
-type Scope = [Ident]
-type Scopes = [Scope]
 
-data IntState = IntState {
-  store :: Store,
-  freeLocs :: [Loc],
-  env :: Env,
-  scopes :: Scopes
-}
+type Loc = Int
+type ValEnv = Map.Map Ident Loc
+type FuncEnv = Map.Map Ident Func
+type Env = (ValEnv, FuncEnv)
+type Store = Map.Map Loc Val
 
 -- Init Enviroment --
 
 initStore :: Store
 initStore = Map.empty
 
-initFreeLocs :: [Loc]
-initFreeLocs = [1..2^16]
-
 initEnv :: Env
-initEnv = Map.empty
-
-emptyScope = []
-initScopes :: Scopes
-initScopes = [emptyScope]
-
-initState = IntState initStore initFreeLocs initEnv initScopes
+initEnv = (Map.empty, Map.empty)
 
 -- IM --
 
-type IM a = StateT IntState (ErrorT String IO) a
-runIM :: IM a -> IntState -> IO (Either String (a, IntState))
-runIM m st = runErrorT (runStateT m st)
+type IM a = ReaderT Env (ExceptT String (StateT Store IO)) a
+runIM :: IM a -> Store -> Env -> IO (Either String a, Store)
+runIM m st en = runStateT (runExceptT (runReaderT m en)) st
 
 -- Memory Management -- 
 
+-- set values --
+
 alloc :: IM Loc
 alloc = do
-  locs <- getFreeLocs
-  case locs of
-    [] -> throwError "No more free locs"
-    (l:ls) -> putFreeLocs ls >> return l
+  gets Map.size
 
-free :: Loc -> IM ()
-free l = do
-  ls <- getFreeLocs
-  putFreeLocs (l:ls)
+insertValue :: Loc -> Val -> IM ()
+insertValue loc val = do
+  store' <- gets (Map.insert loc val)
+  put store'
 
-updateStore :: Loc -> Val -> IM ()
-updateStore v x = modify $ \state -> state {
-  store = Map.insert v x (store state)}
+declareVar :: Ident -> Val -> IM ValEnv
+declareVar id val = do
+  loc <- alloc
+  valEnv' <- asks (Map.insert id loc . fst)
+  insertValue loc val
+  return valEnv'
 
-getStore :: IM Store
-getStore = gets store
+declareFunc :: Ident -> Func -> IM FuncEnv
+declareFunc id func = do
+  asks (Map.insert id func . snd)
 
-getFreeLocs :: IM [Loc]
-getFreeLocs = gets freeLocs
+-- get values -- 
 
-putFreeLocs :: [Loc] -> IM ()
-putFreeLocs freeLocs = modify $ \r -> r { freeLocs }
-
-getEnv :: IM Env
-getEnv = gets env
-
-putEnv :: Env -> IM ()
-putEnv env = modify $ \r -> r { env }
-
-modifyEnv :: (Env -> Env) -> IM ()
-modifyEnv f = getEnv >>= putEnv . f
-
-getScopes ::  IM Scopes
-getScopes = gets scopes
-
-putScopes :: Scopes -> IM ()
-putScopes scopes = modify $ \r -> r { scopes }
-
-modifyScopes :: (Scopes -> Scopes) -> IM ()
-modifyScopes f = getScopes >>= putScopes . f
-
-popScope :: IM Scope
-popScope = do
-  (scope:scopes) <- getScopes
-  putScopes scopes
-  return scope
-
-enterScope :: IM ()
-enterScope = modifyScopes (emptyScope:)
-
-leaveScope :: IM ()
-leaveScope = do
-  env <- getEnv
-  scope <- popScope
-  let scopeLocs = catMaybes $ Prelude.map (flip lookupEnv env) scope
-  mapM_ free scopeLocs
-  let env' = Prelude.foldr (\n e -> Map.update pop n e) env scope
-  putEnv env' where
-    pop [] = Nothing
-    pop (x:xs) = Just xs
-
-createVar :: Ident -> IM Loc
-createVar n = do
-  l <- alloc
-  modifyEnv (updateEnv n l)
-  modifyScopes (addLocal n)
-  return l
-
-addLocal :: Ident -> Scopes -> Scopes
-addLocal n (h:t) =(n:h):t
-addLocal n [] = []
-
-lookupEnv :: Ident -> Env -> Maybe Loc
-lookupEnv n e = do
-  stack <- Map.lookup n e
-  case stack of
-    [] -> Nothing
-    (l:_) -> return l
-
-updateEnv :: Ident -> Loc -> Env -> Env
-updateEnv n l = Map.insertWith (++) n [l]
+getFunc :: Ident -> IM Func
+getFunc id = do
+  func <- asks (Map.lookup id . snd)
+  case func of
+    Just l -> return l
+    Nothing -> throwError ("Function " ++ show id ++ " not defined")
 
 getIdentLoc :: Ident -> IM Loc
-getIdentLoc n =  do
-  env <- getEnv
-  let res  = lookupEnv n env
-  maybe (throwError $ unwords["Undefined var",show n,"env is",show env]) return res
+getIdentLoc id = do
+  loc <- asks (Map.lookup id . fst)
+  case loc of
+    Just l -> return l
+    Nothing -> throwError ("Variable " ++ show id ++ " not declared")
 
-getVar :: Ident -> IM Val
-getVar v =  do
-  loc <- getIdentLoc v
-  store <- getStore
-  let res  = Map.lookup loc store
-  maybe (throwError $ unwords["Unallocated var",show v]) return res
+getLocVal :: Loc -> IM Val
+getLocVal loc = do
+  val <- gets $ Map.lookup loc
+  case val of
+    Just v -> return v
+    Nothing -> throwError $ "Location " ++ show loc ++ " has no value assigned"
+
+getIdentVal :: Ident -> IM Val
+getIdentVal id = do
+  loc <- getIdentLoc id
+  getLocVal loc
 
 -- run interpreter --
 
-interpretProgram :: Program -> IO (Either String (Val, IntState))
+interpretProgram :: Program -> IO (Either String Val, Store) -- todo zmienic IntState
 interpretProgram program =
-  runIM (runMain program) initState
+  runIM (runMain program) initStore initEnv
 
 
 runMain :: Program -> IM Val
@@ -179,13 +119,17 @@ runMain (Program tds) = do
 
 -- TopDef --
 
-addTopDef :: TopDef -> IM ()
+addTopDef :: TopDef -> IM Env
 addTopDef (FnDef t id args b) = do
-  l <- createVar id
-  updateStore l (VFunc t id args b)
+  (valEnv, _) <- ask
+  funcEnv <- declareFunc id (VFunc t id args b)
+  return (valEnv, funcEnv)
 
-addTopDefs :: [TopDef] -> IM ()
-addTopDefs = Prelude.foldr ((>>) . addTopDef) (return ())
+addTopDefs :: [TopDef] -> IM Env
+addTopDefs [] = ask
+addTopDefs (def:ds) = do
+  newEnv <- addTopDef def
+  local (const newEnv) $ addTopDefs ds
 
 -- Expr Helpers --
 
@@ -226,34 +170,35 @@ andVBool (VBool a) (VBool b) = VBool (a && b)
 orVBool :: Val -> Val -> Val
 orVBool (VBool a) (VBool b) = VBool (a || b)
 
-declFunctionArgs :: [Expr] -> [Arg] -> IM ()
-declFunctionArgs [] [] = return ()
+declFunctionArgs :: [Expr] -> [Arg] -> IM Env
+declFunctionArgs [] [] = ask
 declFunctionArgs [] (a:xa) = throwError "Number of arguments don't match"
 declFunctionArgs (e:xe) [] = throwError "Number of arguments don't match"
 declFunctionArgs (e:xe) (a:xa) = do
   v <- evalExpr e
   case a of
     (ArgNoRef t id) -> do
-      l <- createVar id
-      updateStore l v
-    (ArgRef t id) -> do -- todo change to reference
-      l <- createVar id
-      updateStore l v
+      (_, funcEnv) <- ask
+      valEnv' <- declareVar id v
+      local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
+    (ArgRef t id) -> do 
+      l <- getIdentLoc id
+      insertValue l v
+      env <- ask
+      local(const env) $ declFunctionArgs xe xa
 
 -- Evaluate Expr --
 
 evalExpr :: Expr -> IM Val
-evalExpr (EVar id) = getVar id
+evalExpr (EVar id) = getIdentVal id
 evalExpr (ELitInt i) = return (VInt i)
 evalExpr ELitTrue = return (VBool True)
 evalExpr ELitFalse = return (VBool False)
 
 evalExpr (EApp id exprs) = do
-  enterScope
-  (VFunc t id args (Block b)) <- getVar id
-  declFunctionArgs exprs args
-  retVal <- execBlock b
-  leaveScope
+  (VFunc t id args (Block b)) <- getFunc id
+  env <- declFunctionArgs exprs args
+  retVal <- local (const env) $ execBlock b
   case retVal of
     Return val -> return val
     _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
@@ -279,19 +224,20 @@ execBlock (s:ss) = do
     ReturnNothing -> execBlock ss
     breakOrCont -> return breakOrCont
 
-declItem :: Type -> Item -> IM ()
+declItem :: Type -> Item -> IM Env
 declItem t (NoInit id) = do
+  (_, funcEnv) <- ask
   n <- case t of
     Int -> return (VInt 0)
     Bool -> return (VBool False)
     Str -> return (VString "")
-  l <- createVar id
-  updateStore l n
-
+  valEnv <- declareVar id n
+  return (valEnv, funcEnv)
 declItem t (Init id e) = do
+  (_, funcEnv) <- ask
   n <- evalExpr e
-  l <- createVar id
-  updateStore l n
+  valEnv <- declareVar id n
+  return (valEnv, funcEnv)
 
 execDecl :: Type -> [Item] -> IM ()
 execDecl t = Prelude.foldr ((>>) . declItem t) (return ())
@@ -304,52 +250,45 @@ execStmt (BStmt (Block b)) = execBlock b
 execStmt (Decl t items) = execDecl t items >> return ReturnNothing
 execStmt (Ass id expr) = do
   n <- evalExpr expr
-  l <- createVar id
-  updateStore l n
-  return ReturnNothing
-execStmt (Incr id) = do
-  VInt v <- getVar id
   l <- getIdentLoc id
-  updateStore l (VInt $ v + 1)
+  insertValue l n
+  return ReturnNothing
+
+execStmt (Incr id) = do
+  VInt v <- getIdentVal id
+  l <- getIdentLoc id
+  insertValue l (VInt $ v + 1)
   return ReturnNothing
 
 execStmt (Decr id) = do
-  VInt v <- getVar id
+  VInt v <- getIdentVal id
   l <- getIdentLoc id
-  updateStore l (VInt $ v - 1)
+  insertValue l (VInt $ v - 1)
   return ReturnNothing
 
 execStmt (Ret expr) = Return <$> evalExpr expr
-execStmt VRet = return $ Return VNull
+execStmt VRet = return $ Return VVoid
 execStmt (Cond expr (Block b)) = do
   VBool c <- evalExpr expr
   if c then do
-    enterScope
-    retVal <- execBlock b
-    leaveScope
-    return retVal
+    env <- ask
+    local (const env) $ execBlock b
   else
     return ReturnNothing
 
 execStmt (CondElse expr (Block b1) (Block b2)) = do
   VBool c <- evalExpr expr
+  env <- ask
   if c then do
-    enterScope
-    retVal <- execBlock b1
-    leaveScope
-    return retVal
+    local (const env) $ execBlock b1
   else do
-    enterScope
-    retVal <- execBlock b2
-    leaveScope
-    return retVal
+    local (const env) $ execBlock b2
 
 execStmt (While expr (Block b)) = do
   VBool c <- evalExpr expr
+  env <- ask
   if c then do
-    enterScope
-    retVal <- execBlock b
-    leaveScope
+    retVal <- local (const env) $ execBlock b
     case retVal of
       RBreak -> return ReturnNothing
       Return val -> return (Return val)

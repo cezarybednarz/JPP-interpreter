@@ -22,10 +22,10 @@ main = do
             hPutStrLn stderr message
             exitFailure
           Right parseTree -> do
-            output <- interpretProgram parseTree
+            (output, _) <- interpretProgram parseTree
             case output of 
               Left message -> hPutStrLn stderr message
-              Right (VInt exitCode, _) -> do
+              Right (VInt exitCode) -> do
                 if exitCode /= 0
                   then hPutStrLn stderr $ "Error, exit code: " ++ show exitCode
                 else
