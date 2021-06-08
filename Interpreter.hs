@@ -186,20 +186,23 @@ orVBool (VBool a) (VBool b) = VBool (a || b)
 
 declFunctionArgs :: [Expr] -> [Arg] -> IM Env
 declFunctionArgs [] [] = ask
-declFunctionArgs [] (a:xa) = throwError "Number of arguments don't match"
-declFunctionArgs (e:xe) [] = throwError "Number of arguments don't match"
+declFunctionArgs [] (a:xa) = throwError "Error: Number of arguments don't match"
+declFunctionArgs (e:xe) [] = throwError "Error: Number of arguments don't match"
 declFunctionArgs (e:xe) (a:xa) = do
   v <- evalExpr e
+  (_, funcEnv) <- ask
   case a of
     (ArgNoRef t id) -> do
-      (_, funcEnv) <- ask
       valEnv' <- declareVar id v
       local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
     (ArgRef t id) -> do
-      l <- getIdentLoc id
-      insertValue l v
-      env <- ask
-      local (const env) $ declFunctionArgs xe xa
+      case e of
+        EVar ident -> do
+          l <- getIdentLoc ident
+          valEnv' <- asks (Map.insert id l . fst)
+          local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
+        _ -> 
+          throwError $ "Error: cannot pass " ++ show e ++ " by reference"
 
 -- Evaluate Expr --
 
@@ -215,7 +218,7 @@ evalExpr (EApp id exprs) = do
   retVal <- local (const env) $ execBlock b
   case retVal of
     (Return val, _) -> return val
-    _ -> throwError $ unwords["Function ",show id,"didn't return anything"]
+    _ -> throwError $ "Error: Function " ++ show id ++ "didn't return anything"
 
 evalExpr (EString s) = return (VString s)
 evalExpr (Neg expr) = negVInt <$> evalExpr expr
@@ -225,7 +228,7 @@ evalExpr (EAdd expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr
 evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (ERel expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
 evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (ELambda l) = throwError "ELambda not implemented"
+evalExpr (ELambda l) = throwError "Error: ELambda not implemented"
 
 -- Stmt --
 
