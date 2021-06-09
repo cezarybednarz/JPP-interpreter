@@ -21,6 +21,14 @@ debug = do
   liftIO $ print $ "store: " ++ show store
   liftIO $ print "---------"
 
+-- Error with line numbers --
+
+errMessage :: BNFC'Position -> String -> String
+errMessage line message =
+  case line of 
+    Just (line, col) -> "ERROR: line " ++ show line ++ " column " ++ show col ++ ": " ++ message
+    Nothing -> "ERROR: " ++ message
+
 -- Func and Val --
 
 data Func = VFunc Type Ident [Arg] Block
@@ -101,21 +109,21 @@ getFunc id = do
   func <- asks (Map.lookup id . snd)
   case func of
     Just l -> return l
-    Nothing -> throwError ("Function " ++ show id ++ " not defined")
+    Nothing -> throwError ("function " ++ show id ++ " not defined")
 
 getIdentLoc :: Ident -> IM Loc
 getIdentLoc id = do
   loc <- asks (Map.lookup id . fst)
   case loc of
     Just l -> return l
-    Nothing -> throwError ("Variable " ++ show id ++ " not declared")
+    Nothing -> throwError ("variable " ++ show id ++ " not declared")
 
 getLocVal :: Loc -> IM Val
 getLocVal loc = do
   val <- gets $ Map.lookup loc
   case val of
     Just v -> return v
-    Nothing -> throwError $ "Location " ++ show loc ++ " has no value assigned"
+    Nothing -> throwError $ "location " ++ show loc ++ " has no value assigned"
 
 getIdentVal :: Ident -> IM Val
 getIdentVal id = do
@@ -177,7 +185,7 @@ mulVInt (Div line) (VInt a) (VInt b) =
     VInt (a `div` b)
 mulVInt (Mod line) (VInt a) (VInt b) =
   if b == 0 then
-    error "Modulo by 0"
+    error "Modulo by 0" 
   else
     VInt (a `mod` b)
 
@@ -189,8 +197,8 @@ orVBool (VBool a) (VBool b) = VBool (a || b)
 
 declFunctionArgs :: [Expr] -> [Arg] -> IM Env
 declFunctionArgs [] [] = ask
-declFunctionArgs [] (a:xa) = throwError "Error: Number of arguments don't match"
-declFunctionArgs (e:xe) [] = throwError "Error: Number of arguments don't match"
+declFunctionArgs [] (a:xa) = throwError "number of arguments don't match"
+declFunctionArgs (e:xe) [] = throwError "number of arguments don't match"
 declFunctionArgs (e:xe) (a:xa) = do
   v <- evalExpr e
   (_, funcEnv) <- ask
@@ -205,7 +213,7 @@ declFunctionArgs (e:xe) (a:xa) = do
           valEnv' <- asks (Map.insert id l . fst)
           local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
         _ ->
-          throwError $ "Error: cannot pass " ++ show e ++ " by reference"
+          throwError $ errMessage line $ "cannot pass " ++ show e ++ " by reference"
 
 -- Evaluate Expr --
 
@@ -221,7 +229,7 @@ evalExpr (EApp line id exprs) = do
   retVal <- local (const env) $ execBlock b
   case retVal of
     (Return val, _) -> return val
-    _ -> throwError $ "Error: Function " ++ show id ++ "didn't return anything"
+    _ -> throwError $ "Function " ++ show id ++ "didn't return anything"
 
 evalExpr (EString line s) = return (VString s)
 evalExpr (Neg line expr) = negVInt <$> evalExpr expr
