@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, NamedFieldPuns #-}
+{-# LANGUAGE MultiParamTypeClasses, NamedFieldPuns, FlexibleContexts #-}
 
 module Interpreter where
 
@@ -19,7 +19,7 @@ debug = do
   liftIO $ print $ "vars:  " ++ show m1
   liftIO $ print $ "funcs: " ++ show m2
   liftIO $ print $ "store: " ++ show store
-  liftIO $ print "-----"
+  liftIO $ print "---------"
 
 -- Func and Val --
 
@@ -39,11 +39,14 @@ instance Show Val where
   show (VInt val) = show val
   show (VBool b) = show b
   show (VString str) = show str
-  show VVoid = show "Error: Cannot show void value"
+  show VVoid = show "void"
 
 -- RetInfo --
 
-data RetInfo = Return Val | ReturnNothing | RBreak | RContinue
+data RetInfo = Return Val
+             | ReturnNothing
+             | RBreak
+             | RContinue
 
 -- Memory and Enviroment --
 
@@ -127,14 +130,14 @@ interpretProgram program =
 
 
 runMain :: Program -> IM Val
-runMain (Program tds) = do
+runMain (Program line tds) = do
   env <- addTopDefs tds
-  local (const env) $ evalExpr $ EApp (Ident "main") []
+  local (const env) $ evalExpr $ EApp line (Ident "main") []
 
 -- TopDef --
 
 addTopDef :: TopDef -> IM Env
-addTopDef (FnDef t id args b) = do
+addTopDef (FnDef line t id args b) = do
   (valEnv, _) <- ask
   funcEnv <- declareFunc id (VFunc t id args b)
   return (valEnv, funcEnv)
@@ -154,25 +157,25 @@ notVBool :: Val -> Val
 notVBool (VBool b) = VBool (not b)
 
 relVInt :: RelOp -> Val -> Val -> Val
-relVInt LTH (VInt a) (VInt b) = VBool (a < b)
-relVInt LE (VInt a) (VInt b) = VBool (a <= b)
-relVInt GTH (VInt a) (VInt b) = VBool (a > b)
-relVInt GE (VInt a) (VInt b) = VBool (a >= b)
-relVInt EQU (VInt a) (VInt b) = VBool (a == b)
-relVInt NE (VInt a) (VInt b) = VBool (a /= b)
+relVInt (LTH line) (VInt a) (VInt b) = VBool (a < b)
+relVInt (LE line) (VInt a) (VInt b) = VBool (a <= b)
+relVInt (GTH line) (VInt a) (VInt b) = VBool (a > b)
+relVInt (GE line) (VInt a) (VInt b) = VBool (a >= b)
+relVInt (EQU line) (VInt a) (VInt b) = VBool (a == b)
+relVInt (NE line) (VInt a) (VInt b) = VBool (a /= b)
 
 addVInt :: AddOp -> Val -> Val -> Val
-addVInt Plus (VInt a) (VInt b) = VInt (a + b)
-addVInt Minus (VInt a) (VInt b) = VInt (a - b)
+addVInt (Plus line) (VInt a) (VInt b) = VInt (a + b)
+addVInt (Minus line) (VInt a) (VInt b) = VInt (a - b)
 
 mulVInt :: MulOp -> Val -> Val -> Val
-mulVInt Times (VInt a) (VInt b) = VInt (a * b)
-mulVInt Div (VInt a) (VInt b) =
+mulVInt (Times line) (VInt a) (VInt b) = VInt (a * b)
+mulVInt (Div line) (VInt a) (VInt b) =
   if b == 0 then
     error "Division by 0"
   else
     VInt (a `div` b)
-mulVInt Mod (VInt a) (VInt b) =
+mulVInt (Mod line) (VInt a) (VInt b) =
   if b == 0 then
     error "Modulo by 0"
   else
@@ -192,43 +195,42 @@ declFunctionArgs (e:xe) (a:xa) = do
   v <- evalExpr e
   (_, funcEnv) <- ask
   case a of
-    (ArgNoRef t id) -> do
+    (ArgNoRef line t id) -> do
       valEnv' <- declareVar id v
       local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
-    (ArgRef t id) -> do
+    (ArgRef line t id) -> do
       case e of
-        EVar ident -> do
+        EVar line ident -> do
           l <- getIdentLoc ident
           valEnv' <- asks (Map.insert id l . fst)
           local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
-        _ -> 
+        _ ->
           throwError $ "Error: cannot pass " ++ show e ++ " by reference"
 
 -- Evaluate Expr --
 
 evalExpr :: Expr -> IM Val
-evalExpr (EVar id) = getIdentVal id
-evalExpr (ELitInt i) = return (VInt i)
-evalExpr ELitTrue = return (VBool True)
-evalExpr ELitFalse = return (VBool False)
+evalExpr (EVar line id) = getIdentVal id
+evalExpr (ELitInt line i) = return (VInt i)
+evalExpr (ELitTrue line)= return (VBool True)
+evalExpr (ELitFalse line) = return (VBool False)
 
-evalExpr (EApp id exprs) = do
-  (VFunc t id args (Block b)) <- getFunc id
+evalExpr (EApp line id exprs) = do
+  (VFunc t id args (Block line2 b)) <- getFunc id
   env <- declFunctionArgs exprs args
   retVal <- local (const env) $ execBlock b
   case retVal of
     (Return val, _) -> return val
     _ -> throwError $ "Error: Function " ++ show id ++ "didn't return anything"
 
-evalExpr (EString s) = return (VString s)
-evalExpr (Neg expr) = negVInt <$> evalExpr expr
-evalExpr (Not expr) = notVBool <$> evalExpr expr
-evalExpr (EMul expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EAdd expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EAnd expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (ERel expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EOr expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (ELambda l) = throwError "Error: ELambda not implemented"
+evalExpr (EString line s) = return (VString s)
+evalExpr (Neg line expr) = negVInt <$> evalExpr expr
+evalExpr (Not line expr) = notVBool <$> evalExpr expr
+evalExpr (EMul line expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EAdd line expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EAnd line expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (ERel line expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (EOr line expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2
 
 -- Stmt --
 
@@ -245,15 +247,15 @@ execBlock (s:ss) = do
     (breakOrCont, env) -> return (breakOrCont, env)
 
 declItem :: Type -> Item -> IM Env
-declItem t (NoInit id) = do
+declItem t (NoInit line id) = do
   (_, funcEnv) <- ask
   n <- case t of
-    Int -> return (VInt 0)
-    Bool -> return (VBool False)
-    Str -> return (VString "")
+    Int line2 -> return (VInt 0)
+    Bool line2 -> return (VBool False)
+    Str line2 -> return (VString "")
   valEnv <- declareVar id n
   return (valEnv, funcEnv)
-declItem t (Init id e) = do
+declItem t (Init line2 id e) = do
   (_, funcEnv) <- ask
   n <- evalExpr e
   valEnv <- declareVar id n
@@ -268,42 +270,42 @@ execDecl t (x:xs) = do
 -- Execute Stmt -- 
 
 execStmt :: Stmt -> IM (RetInfo, Env)
-execStmt Empty = do
+execStmt (Empty line) = do
   env <- ask
   return (ReturnNothing, env)
-execStmt (BStmt (Block b)) = execBlock b
-execStmt (Decl t items) = do
+execStmt (BStmt line (Block line2 b)) = execBlock b
+execStmt (Decl line t items) = do
   env <- execDecl t items
   return (ReturnNothing, env)
-execStmt (Ass id expr) = do
+execStmt (Ass line id expr) = do
   n <- evalExpr expr
   l <- getIdentLoc id
   env <- ask
   insertValue l n
   return (ReturnNothing, env)
 
-execStmt (Incr id) = do
+execStmt (Incr line id) = do
   VInt v <- getIdentVal id
   l <- getIdentLoc id
   env <- ask
   insertValue l (VInt $ v + 1)
   return (ReturnNothing, env)
 
-execStmt (Decr id) = do
+execStmt (Decr line id) = do
   VInt v <- getIdentVal id
   l <- getIdentLoc id
   env <- ask
   insertValue l (VInt $ v - 1)
   return (ReturnNothing, env)
 
-execStmt (Ret expr) = do
+execStmt (Ret line expr) = do
   e <- evalExpr expr
   env <- ask
   return (Return e, env)
-execStmt VRet = do
+execStmt (VRet line) = do
   env <- ask
   return (Return VVoid, env)
-execStmt (Cond expr (Block b)) = do
+execStmt (Cond line expr (Block line2 b)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
@@ -312,7 +314,7 @@ execStmt (Cond expr (Block b)) = do
   else
     return (ReturnNothing, env)
 
-execStmt (CondElse expr (Block b1) (Block b2)) = do
+execStmt (CondElse line expr (Block line2 b1) (Block line3 b2)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
@@ -321,9 +323,9 @@ execStmt (CondElse expr (Block b1) (Block b2)) = do
   else do
     (retVal, _) <- local (const env) $ execBlock b2
     return (retVal, env)
-  
 
-execStmt (While expr (Block b)) = do
+
+execStmt (While line expr (Block line2 b)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
@@ -331,22 +333,21 @@ execStmt (While expr (Block b)) = do
     case retVal of
       RBreak -> return (ReturnNothing, env)
       Return val -> return (Return val, env)
-      _ -> execStmt (While expr (Block b))
+      _ -> execStmt (While line expr (Block line2 b ))
   else
     return (ReturnNothing, env)
 
-execStmt (SExp expr) = do
+execStmt (SExp line expr) = do
   env <- ask
   evalExpr expr
   return (ReturnNothing, env)
-execStmt Break = do
+execStmt (Break line) = do
   env <- ask
   return (RBreak, env)
-execStmt Continue = do
+execStmt (Continue line) = do
   env <- ask
   return (RContinue, env)
-execStmt (FnNestDef td) = throwError "FnNestDef not implemented"
-execStmt (SPrint expr) = do
+execStmt (SPrint line expr) = do
   val <- evalExpr expr
   env <- ask
   liftIO $ print val

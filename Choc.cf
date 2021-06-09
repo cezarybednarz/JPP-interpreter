@@ -27,7 +27,6 @@ While.     Stmt ::= "while" "(" Expr ")" Block ;
 SExp.      Stmt ::= Expr  ";" ;
 Break.     Stmt ::= "break" ;
 Continue.  Stmt ::= "continue" ;
-FnNestDef. Stmt ::= TopDef ";" ;
 SPrint.    Stmt  ::= "print" "(" Expr ")" ";" ;
 
 -- Types ---------------------------------------------------
@@ -53,12 +52,8 @@ EAdd.      Expr3 ::= Expr3 AddOp Expr4 ;
 ERel.      Expr2 ::= Expr2 RelOp Expr3 ;
 EAnd.      Expr1 ::= Expr2 "&&" Expr1 ;
 EOr.       Expr ::= Expr1 "||" Expr ;
-ELambda.   Expr ::= Lambda ;
 coercions  Expr 6 ;
 separator  Expr "," ;
-
--- Lambdas -------------------------------------------------
-LambdaDef. Lambda ::= "lambda" "<" Type "(" [Arg] ")" ">" Block ;
 
 -- operators -----------------------------------------------
 Plus.      AddOp ::= "+" ;

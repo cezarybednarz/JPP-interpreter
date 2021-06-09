@@ -33,8 +33,8 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 The reserved words used in Choc are the following:
   | ``boolean`` | ``break`` | ``continue`` | ``else``
   | ``false`` | ``function`` | ``if`` | ``int``
-  | ``lambda`` | ``print`` | ``return`` | ``string``
-  | ``true`` | ``void`` | ``while`` |
+  | ``print`` | ``return`` | ``string`` | ``true``
+  | ``void`` | ``while`` |  |
 
 The symbols used in Choc are the following:
   | ( | ) | & | ,
@@ -79,7 +79,6 @@ All other symbols are terminals.
   |  |  **|**  | //Expr// ``;``
   |  |  **|**  | ``break``
   |  |  **|**  | ``continue``
-  |  |  **|**  | //TopDef// ``;``
   |  |  **|**  | ``print`` ``(`` //Expr// ``)`` ``;``
   | //Item// | -> | //Ident//
   |  |  **|**  | //Ident// ``=`` //Expr//
@@ -112,12 +111,10 @@ All other symbols are terminals.
   | //Expr1// | -> | //Expr2// ``&&`` //Expr1//
   |  |  **|**  | //Expr2//
   | //Expr// | -> | //Expr1// ``||`` //Expr//
-  |  |  **|**  | //Lambda//
   |  |  **|**  | //Expr1//
   | //[Expr]// | -> | **eps**
   |  |  **|**  | //Expr//
   |  |  **|**  | //Expr// ``,`` //[Expr]//
-  | //Lambda// | -> | ``lambda`` ``<`` //Type// ``(`` //[Arg]// ``)`` ``>`` //Block//
   | //AddOp// | -> | ``+``
   |  |  **|**  | ``-``
   | //MulOp// | -> | ``*``

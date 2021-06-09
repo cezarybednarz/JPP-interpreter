@@ -17,93 +17,87 @@ transIdent :: Choc.Abs.Ident -> Result
 transIdent x = case x of
   Choc.Abs.Ident string -> failure x
 
-transProgram :: Choc.Abs.Program -> Result
+transProgram :: Show a => Choc.Abs.Program' a -> Result
 transProgram x = case x of
-  Choc.Abs.Program topdefs -> failure x
+  Choc.Abs.Program _ topdefs -> failure x
 
-transTopDef :: Choc.Abs.TopDef -> Result
+transTopDef :: Show a => Choc.Abs.TopDef' a -> Result
 transTopDef x = case x of
-  Choc.Abs.FnDef type_ ident args block -> failure x
+  Choc.Abs.FnDef _ type_ ident args block -> failure x
 
-transArg :: Choc.Abs.Arg -> Result
+transArg :: Show a => Choc.Abs.Arg' a -> Result
 transArg x = case x of
-  Choc.Abs.ArgNoRef type_ ident -> failure x
-  Choc.Abs.ArgRef type_ ident -> failure x
+  Choc.Abs.ArgNoRef _ type_ ident -> failure x
+  Choc.Abs.ArgRef _ type_ ident -> failure x
 
-transBlock :: Choc.Abs.Block -> Result
+transBlock :: Show a => Choc.Abs.Block' a -> Result
 transBlock x = case x of
-  Choc.Abs.Block stmts -> failure x
+  Choc.Abs.Block _ stmts -> failure x
 
-transStmt :: Choc.Abs.Stmt -> Result
+transStmt :: Show a => Choc.Abs.Stmt' a -> Result
 transStmt x = case x of
-  Choc.Abs.Empty -> failure x
-  Choc.Abs.BStmt block -> failure x
-  Choc.Abs.Decl type_ items -> failure x
-  Choc.Abs.Ass ident expr -> failure x
-  Choc.Abs.Incr ident -> failure x
-  Choc.Abs.Decr ident -> failure x
-  Choc.Abs.Ret expr -> failure x
-  Choc.Abs.VRet -> failure x
-  Choc.Abs.Cond expr block -> failure x
-  Choc.Abs.CondElse expr block1 block2 -> failure x
-  Choc.Abs.While expr block -> failure x
-  Choc.Abs.SExp expr -> failure x
-  Choc.Abs.Break -> failure x
-  Choc.Abs.Continue -> failure x
-  Choc.Abs.FnNestDef topdef -> failure x
-  Choc.Abs.SPrint expr -> failure x
+  Choc.Abs.Empty _ -> failure x
+  Choc.Abs.BStmt _ block -> failure x
+  Choc.Abs.Decl _ type_ items -> failure x
+  Choc.Abs.Ass _ ident expr -> failure x
+  Choc.Abs.Incr _ ident -> failure x
+  Choc.Abs.Decr _ ident -> failure x
+  Choc.Abs.Ret _ expr -> failure x
+  Choc.Abs.VRet _ -> failure x
+  Choc.Abs.Cond _ expr block -> failure x
+  Choc.Abs.CondElse _ expr block1 block2 -> failure x
+  Choc.Abs.While _ expr block -> failure x
+  Choc.Abs.SExp _ expr -> failure x
+  Choc.Abs.Break _ -> failure x
+  Choc.Abs.Continue _ -> failure x
+  Choc.Abs.SPrint _ expr -> failure x
 
-transItem :: Choc.Abs.Item -> Result
+transItem :: Show a => Choc.Abs.Item' a -> Result
 transItem x = case x of
-  Choc.Abs.NoInit ident -> failure x
-  Choc.Abs.Init ident expr -> failure x
+  Choc.Abs.NoInit _ ident -> failure x
+  Choc.Abs.Init _ ident expr -> failure x
 
-transType :: Choc.Abs.Type -> Result
+transType :: Show a => Choc.Abs.Type' a -> Result
 transType x = case x of
-  Choc.Abs.Int -> failure x
-  Choc.Abs.Str -> failure x
-  Choc.Abs.Bool -> failure x
-  Choc.Abs.Void -> failure x
-  Choc.Abs.Function type_ types -> failure x
-  Choc.Abs.Fun type_ types -> failure x
+  Choc.Abs.Int _ -> failure x
+  Choc.Abs.Str _ -> failure x
+  Choc.Abs.Bool _ -> failure x
+  Choc.Abs.Void _ -> failure x
+  Choc.Abs.Function _ type_ types -> failure x
+  Choc.Abs.Fun _ type_ types -> failure x
 
-transExpr :: Choc.Abs.Expr -> Result
+transExpr :: Show a => Choc.Abs.Expr' a -> Result
 transExpr x = case x of
-  Choc.Abs.EVar ident -> failure x
-  Choc.Abs.ELitInt integer -> failure x
-  Choc.Abs.ELitTrue -> failure x
-  Choc.Abs.ELitFalse -> failure x
-  Choc.Abs.EApp ident exprs -> failure x
-  Choc.Abs.EString string -> failure x
-  Choc.Abs.Neg expr -> failure x
-  Choc.Abs.Not expr -> failure x
-  Choc.Abs.EMul expr1 mulop expr2 -> failure x
-  Choc.Abs.EAdd expr1 addop expr2 -> failure x
-  Choc.Abs.ERel expr1 relop expr2 -> failure x
-  Choc.Abs.EAnd expr1 expr2 -> failure x
-  Choc.Abs.EOr expr1 expr2 -> failure x
-  Choc.Abs.ELambda lambda -> failure x
+  Choc.Abs.EVar _ ident -> failure x
+  Choc.Abs.ELitInt _ integer -> failure x
+  Choc.Abs.ELitTrue _ -> failure x
+  Choc.Abs.ELitFalse _ -> failure x
+  Choc.Abs.EApp _ ident exprs -> failure x
+  Choc.Abs.EString _ string -> failure x
+  Choc.Abs.Neg _ expr -> failure x
+  Choc.Abs.Not _ expr -> failure x
+  Choc.Abs.EMul _ expr1 mulop expr2 -> failure x
+  Choc.Abs.EAdd _ expr1 addop expr2 -> failure x
+  Choc.Abs.ERel _ expr1 relop expr2 -> failure x
+  Choc.Abs.EAnd _ expr1 expr2 -> failure x
+  Choc.Abs.EOr _ expr1 expr2 -> failure x
 
-transLambda :: Choc.Abs.Lambda -> Result
-transLambda x = case x of
-  Choc.Abs.LambdaDef type_ args block -> failure x
-
-transAddOp :: Choc.Abs.AddOp -> Result
+transAddOp :: Show a => Choc.Abs.AddOp' a -> Result
 transAddOp x = case x of
-  Choc.Abs.Plus -> failure x
-  Choc.Abs.Minus -> failure x
+  Choc.Abs.Plus _ -> failure x
+  Choc.Abs.Minus _ -> failure x
 
-transMulOp :: Choc.Abs.MulOp -> Result
+transMulOp :: Show a => Choc.Abs.MulOp' a -> Result
 transMulOp x = case x of
-  Choc.Abs.Times -> failure x
-  Choc.Abs.Div -> failure x
-  Choc.Abs.Mod -> failure x
+  Choc.Abs.Times _ -> failure x
+  Choc.Abs.Div _ -> failure x
+  Choc.Abs.Mod _ -> failure x
 
-transRelOp :: Choc.Abs.RelOp -> Result
+transRelOp :: Show a => Choc.Abs.RelOp' a -> Result
 transRelOp x = case x of
-  Choc.Abs.LTH -> failure x
-  Choc.Abs.LE -> failure x
-  Choc.Abs.GTH -> failure x
-  Choc.Abs.GE -> failure x
-  Choc.Abs.EQU -> failure x
-  Choc.Abs.NE -> failure x
+  Choc.Abs.LTH _ -> failure x
+  Choc.Abs.LE _ -> failure x
+  Choc.Abs.GTH _ -> failure x
+  Choc.Abs.GE _ -> failure x
+  Choc.Abs.EQU _ -> failure x
+  Choc.Abs.NE _ -> failure x
