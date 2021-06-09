@@ -63,7 +63,6 @@ transType x = case x of
   Choc.Abs.Str _ -> failure x
   Choc.Abs.Bool _ -> failure x
   Choc.Abs.Void _ -> failure x
-  Choc.Abs.Function _ type_ types -> failure x
   Choc.Abs.Fun _ type_ types -> failure x
 
 transExpr :: Show a => Choc.Abs.Expr' a -> Result

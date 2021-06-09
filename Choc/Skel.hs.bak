@@ -50,7 +50,6 @@ transStmt x = case x of
   Choc.Abs.SExp _ expr -> failure x
   Choc.Abs.Break _ -> failure x
   Choc.Abs.Continue _ -> failure x
-  Choc.Abs.FnNestDef _ topdef -> failure x
   Choc.Abs.SPrint _ expr -> failure x
 
 transItem :: Show a => Choc.Abs.Item' a -> Result
@@ -82,11 +81,6 @@ transExpr x = case x of
   Choc.Abs.ERel _ expr1 relop expr2 -> failure x
   Choc.Abs.EAnd _ expr1 expr2 -> failure x
   Choc.Abs.EOr _ expr1 expr2 -> failure x
-  Choc.Abs.ELambda _ lambda -> failure x
-
-transLambda :: Show a => Choc.Abs.Lambda' a -> Result
-transLambda x = case x of
-  Choc.Abs.LambdaDef _ type_ args block -> failure x
 
 transAddOp :: Show a => Choc.Abs.AddOp' a -> Result
 transAddOp x = case x of

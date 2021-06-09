@@ -177,7 +177,6 @@ instance Print (Choc.Abs.Type' a) where
     Choc.Abs.Str _ -> prPrec i 0 (concatD [doc (showString "string")])
     Choc.Abs.Bool _ -> prPrec i 0 (concatD [doc (showString "boolean")])
     Choc.Abs.Void _ -> prPrec i 0 (concatD [doc (showString "void")])
-    Choc.Abs.Function _ type_ types -> prPrec i 0 (concatD [doc (showString "function"), doc (showString "<"), prt 0 type_, doc (showString "("), prt 0 types, doc (showString ")"), doc (showString ">")])
     Choc.Abs.Fun _ type_ types -> prPrec i 0 (concatD [prt 0 type_, doc (showString "("), prt 0 types, doc (showString ")")])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]

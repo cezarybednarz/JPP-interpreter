@@ -51,7 +51,6 @@ data Stmt' a
     | SExp a (Expr' a)
     | Break a
     | Continue a
-    | FnNestDef a (TopDef' a)
     | SPrint a (Expr' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
@@ -84,11 +83,6 @@ data Expr' a
     | ERel a (Expr' a) (RelOp' a) (Expr' a)
     | EAnd a (Expr' a) (Expr' a)
     | EOr a (Expr' a) (Expr' a)
-    | ELambda a (Lambda' a)
-  deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
-
-type Lambda = Lambda' BNFC'Position
-data Lambda' a = LambdaDef a (Type' a) [Arg' a] (Block' a)
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type AddOp = AddOp' BNFC'Position
@@ -154,7 +148,6 @@ instance HasPosition Stmt where
     SExp p _ -> p
     Break p -> p
     Continue p -> p
-    FnNestDef p _ -> p
     SPrint p _ -> p
 
 instance HasPosition Item where
@@ -186,11 +179,6 @@ instance HasPosition Expr where
     ERel p _ _ _ -> p
     EAnd p _ _ -> p
     EOr p _ _ -> p
-    ELambda p _ -> p
-
-instance HasPosition Lambda where
-  hasPosition = \case
-    LambdaDef p _ _ _ -> p
 
 instance HasPosition AddOp where
   hasPosition = \case

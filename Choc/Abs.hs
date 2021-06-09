@@ -60,12 +60,7 @@ data Item' a = NoInit a Ident | Init a Ident (Expr' a)
 
 type Type = Type' BNFC'Position
 data Type' a
-    = Int a
-    | Str a
-    | Bool a
-    | Void a
-    | Function a (Type' a) [Type' a]
-    | Fun a (Type' a) [Type' a]
+    = Int a | Str a | Bool a | Void a | Fun a (Type' a) [Type' a]
   deriving (C.Eq, C.Ord, C.Show, C.Read, C.Functor, C.Foldable, C.Traversable)
 
 type Expr = Expr' BNFC'Position
@@ -161,7 +156,6 @@ instance HasPosition Type where
     Str p -> p
     Bool p -> p
     Void p -> p
-    Function p _ _ -> p
     Fun p _ _ -> p
 
 instance HasPosition Expr where

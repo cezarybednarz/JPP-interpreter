@@ -45,18 +45,17 @@ import Choc.Lex
   'continue' { PT _ (TS _ 24) }
   'else' { PT _ (TS _ 25) }
   'false' { PT _ (TS _ 26) }
-  'function' { PT _ (TS _ 27) }
-  'if' { PT _ (TS _ 28) }
-  'int' { PT _ (TS _ 29) }
-  'print' { PT _ (TS _ 30) }
-  'return' { PT _ (TS _ 31) }
-  'string' { PT _ (TS _ 32) }
-  'true' { PT _ (TS _ 33) }
-  'void' { PT _ (TS _ 34) }
-  'while' { PT _ (TS _ 35) }
-  '{' { PT _ (TS _ 36) }
-  '||' { PT _ (TS _ 37) }
-  '}' { PT _ (TS _ 38) }
+  'if' { PT _ (TS _ 27) }
+  'int' { PT _ (TS _ 28) }
+  'print' { PT _ (TS _ 29) }
+  'return' { PT _ (TS _ 30) }
+  'string' { PT _ (TS _ 31) }
+  'true' { PT _ (TS _ 32) }
+  'void' { PT _ (TS _ 33) }
+  'while' { PT _ (TS _ 34) }
+  '{' { PT _ (TS _ 35) }
+  '||' { PT _ (TS _ 36) }
+  '}' { PT _ (TS _ 37) }
   L_Ident  { PT _ (TV _) }
   L_integ  { PT _ (TI _) }
   L_quoted { PT _ (TL _) }
@@ -128,7 +127,6 @@ Type : 'int' { (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1), Choc.Abs.Int (
      | 'string' { (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1), Choc.Abs.Str (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1))) }
      | 'boolean' { (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1), Choc.Abs.Bool (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1))) }
      | 'void' { (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1), Choc.Abs.Void (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1))) }
-     | 'function' '<' Type '(' ListType ')' '>' { (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1), Choc.Abs.Function (uncurry Choc.Abs.BNFC'Position (tokenLineCol $1)) (snd $3) (snd $5)) }
 
 ListType :: { (Choc.Abs.BNFC'Position, [Choc.Abs.Type]) }
 ListType : {- empty -} { (Choc.Abs.BNFC'NoPosition, []) }

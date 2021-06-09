@@ -25,7 +25,7 @@ debug = do
 
 errMessage :: BNFC'Position -> String -> String
 errMessage line message =
-  case line of 
+  case line of
     Just (line, col) -> "ERROR: line " ++ show line ++ " column " ++ show col ++ ": " ++ message
     Nothing -> "ERROR: " ++ message
 
@@ -176,18 +176,18 @@ addVInt :: AddOp -> Val -> Val -> Val
 addVInt (Plus line) (VInt a) (VInt b) = VInt (a + b)
 addVInt (Minus line) (VInt a) (VInt b) = VInt (a - b)
 
-mulVInt :: MulOp -> Val -> Val -> Val
-mulVInt (Times line) (VInt a) (VInt b) = VInt (a * b)
+mulVInt :: MulOp -> Val -> Val -> IM Val
+mulVInt (Times line) (VInt a) (VInt b) = return $ VInt (a * b)
 mulVInt (Div line) (VInt a) (VInt b) =
   if b == 0 then
-    error "Division by 0"
+    throwError $ errMessage line "division by 0"
   else
-    VInt (a `div` b)
+    return $ VInt (a `div` b)
 mulVInt (Mod line) (VInt a) (VInt b) =
   if b == 0 then
-    error "Modulo by 0" 
+    throwError $ errMessage line "division by 0"
   else
-    VInt (a `mod` b)
+    return $ VInt (a `mod` b)
 
 andVBool :: Val -> Val -> Val
 andVBool (VBool a) (VBool b) = VBool (a && b)
@@ -217,22 +217,22 @@ declFunctionArgs _ (e:xe) (a:xa) = do
 
 evalTwoIntExpr :: BNFC'Position -> Expr -> Expr -> IM (Integer, Integer)
 evalTwoIntExpr line expr1 expr2 = do
-  e1 <- evalExpr expr1 
+  e1 <- evalExpr expr1
   e2 <- evalExpr expr2
-  case e1 of 
+  case e1 of
     (VInt i1) -> do
-      case e2 of 
+      case e2 of
         (VInt i2) -> return (i1, i2)
         _ -> throwError $ errMessage line "second argument should be integer"
     _ -> throwError $ errMessage line "first argument should be integer"
 
 evalTwoBoolExpr :: BNFC'Position -> Expr -> Expr -> IM (Bool, Bool)
 evalTwoBoolExpr line expr1 expr2 = do
-  e1 <- evalExpr expr1 
+  e1 <- evalExpr expr1
   e2 <- evalExpr expr2
-  case e1 of 
+  case e1 of
     (VBool b1) -> do
-      case e2 of 
+      case e2 of
         (VBool b2) -> return (b1, b2)
         _ -> throwError $ errMessage line "second argument should be boolean"
     _ -> throwError $ errMessage line "first argument should be boolean"
@@ -240,7 +240,7 @@ evalTwoBoolExpr line expr1 expr2 = do
 evalOneIntExpr :: BNFC'Position -> Expr -> IM Integer
 evalOneIntExpr line expr1 = do
   e1 <- evalExpr expr1
-  case e1 of 
+  case e1 of
     (VInt i1) -> do
       return i1
     _ -> throwError $ errMessage line "argument should be integer"
@@ -248,10 +248,31 @@ evalOneIntExpr line expr1 = do
 evalOneBoolExpr :: BNFC'Position -> Expr -> IM Bool
 evalOneBoolExpr line expr1 = do
   e1 <- evalExpr expr1
-  case e1 of 
+  case e1 of
     (VBool b1) -> do
       return b1
     _ -> throwError $ errMessage line "argument should be boolean"
+
+cmpTypeVal :: Type -> Val -> IM Bool
+cmpTypeVal t val = do
+  case t of
+    Int _ ->
+      case val of
+      (VInt _) -> return True
+      _ -> return False
+    Bool _ ->
+      case val of
+      (VBool _) -> return True
+      _ -> return False
+    Str _ ->
+      case val of
+      (VString _) -> return True
+      _ -> return False
+    Void _ ->
+      case val of
+      VVoid -> return True
+      _ -> return False
+    _ -> throwError $ errMessage Nothing "unknown type"
 
 -- Evaluate Expr --
 
@@ -266,7 +287,12 @@ evalExpr (EApp line id exprs) = do
   env <- declFunctionArgs line exprs args
   retVal <- local (const env) $ execBlock b
   case retVal of
-    (Return val, _) -> return val
+    (Return val, _) -> do
+      goodType <- cmpTypeVal t val
+      if goodType then
+        return val
+      else
+        throwError $ errMessage line $ "function " ++ show id ++ " returns wrong value type"
     _ -> throwError $ errMessage line $ "function " ++ show id ++ "didn't return anything"
 
 evalExpr (EString line s) = return (VString s)
@@ -278,7 +304,7 @@ evalExpr (Not line expr) = do
   return $ notVBool (VBool b)
 evalExpr (EMul line expr1 op expr2) = do
   (i1, i2) <- evalTwoIntExpr line expr1 expr2
-  return $ mulVInt op (VInt i1) (VInt i2)
+  mulVInt op (VInt i1) (VInt i2)
 evalExpr (EAdd line expr1 op expr2) = do
   (i1, i2) <- evalTwoIntExpr line expr1 expr2
   return $ addVInt op (VInt i1) (VInt i2)
@@ -318,8 +344,12 @@ declItem t (NoInit line id) = do
 declItem t (Init line2 id e) = do
   (_, funcEnv) <- ask
   n <- evalExpr e
-  valEnv <- declareVar id n
-  return (valEnv, funcEnv)
+  goodTypes <- cmpTypeVal t n
+  if goodTypes then do
+    valEnv <- declareVar id n
+    return (valEnv, funcEnv)
+  else
+    throwError $ errMessage line2 "declaration types don't match"
 
 execDecl :: Type -> [Item] -> IM Env
 execDecl t [] = ask
@@ -346,7 +376,7 @@ execStmt (Ass line id expr) = do
 
 execStmt (Incr line id) = do
   val <- getIdentVal line id
-  case val of 
+  case val of
     (VInt v) -> do
       l <- getIdentLoc line id
       env <- ask
@@ -356,7 +386,7 @@ execStmt (Incr line id) = do
 
 execStmt (Decr line id) = do
   val <- getIdentVal line id
-  case val of 
+  case val of
     (VInt v) -> do
       l <- getIdentLoc line id
       env <- ask
