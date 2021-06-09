@@ -27,7 +27,7 @@ main = do
               Left message -> hPutStrLn stderr message
               Right (VInt exitCode) -> do
                 if exitCode /= 0
-                  then hPutStrLn stderr $ "Error, exit code: " ++ show exitCode
+                  then hPutStrLn stderr $ "ERROR: exit code: " ++ show exitCode
                 else
                   exitSuccess
 

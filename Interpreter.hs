@@ -104,31 +104,31 @@ declareFunc id func = do
 
 -- get values -- 
 
-getFunc :: Ident -> IM Func
-getFunc id = do
+getFunc :: BNFC'Position -> Ident -> IM Func
+getFunc line id = do
   func <- asks (Map.lookup id . snd)
   case func of
     Just l -> return l
-    Nothing -> throwError ("function " ++ show id ++ " not defined")
+    Nothing -> throwError $ errMessage line $ "function " ++ show id ++ " not defined"
 
-getIdentLoc :: Ident -> IM Loc
-getIdentLoc id = do
+getIdentLoc :: BNFC'Position -> Ident -> IM Loc
+getIdentLoc line id = do
   loc <- asks (Map.lookup id . fst)
   case loc of
     Just l -> return l
-    Nothing -> throwError ("variable " ++ show id ++ " not declared")
+    Nothing -> throwError $ errMessage line $ "variable " ++ show id ++ " not declared"
 
-getLocVal :: Loc -> IM Val
-getLocVal loc = do
+getLocVal :: BNFC'Position -> Loc -> IM Val
+getLocVal line loc = do
   val <- gets $ Map.lookup loc
   case val of
     Just v -> return v
-    Nothing -> throwError $ "location " ++ show loc ++ " has no value assigned"
+    Nothing -> throwError $ errMessage line $ "location " ++ show loc ++ " has no value assigned"
 
-getIdentVal :: Ident -> IM Val
-getIdentVal id = do
-  loc <- getIdentLoc id
-  getLocVal loc
+getIdentVal :: BNFC'Position -> Ident -> IM Val
+getIdentVal line id = do
+  loc <- getIdentLoc line id
+  getLocVal line loc
 
 -- run interpreter --
 
@@ -195,50 +195,102 @@ andVBool (VBool a) (VBool b) = VBool (a && b)
 orVBool :: Val -> Val -> Val
 orVBool (VBool a) (VBool b) = VBool (a || b)
 
-declFunctionArgs :: [Expr] -> [Arg] -> IM Env
-declFunctionArgs [] [] = ask
-declFunctionArgs [] (a:xa) = throwError "number of arguments don't match"
-declFunctionArgs (e:xe) [] = throwError "number of arguments don't match"
-declFunctionArgs (e:xe) (a:xa) = do
+declFunctionArgs :: BNFC'Position -> [Expr] -> [Arg] -> IM Env
+declFunctionArgs _ [] [] = ask
+declFunctionArgs line [] (a:xa) = throwError $ errMessage line "number of arguments don't match"
+declFunctionArgs line (e:xe) [] = throwError $ errMessage line "number of arguments don't match"
+declFunctionArgs _ (e:xe) (a:xa) = do
   v <- evalExpr e
   (_, funcEnv) <- ask
   case a of
     (ArgNoRef line t id) -> do
       valEnv' <- declareVar id v
-      local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
+      local (const (valEnv', funcEnv)) $ declFunctionArgs line xe xa
     (ArgRef line t id) -> do
       case e of
         EVar line ident -> do
-          l <- getIdentLoc ident
+          l <- getIdentLoc line ident
           valEnv' <- asks (Map.insert id l . fst)
-          local (const (valEnv', funcEnv)) $ declFunctionArgs xe xa
+          local (const (valEnv', funcEnv)) $ declFunctionArgs line xe xa
         _ ->
-          throwError $ errMessage line $ "cannot pass " ++ show e ++ " by reference"
+          throwError $ errMessage line "cannot pass given expression by reference"
+
+evalTwoIntExpr :: BNFC'Position -> Expr -> Expr -> IM (Integer, Integer)
+evalTwoIntExpr line expr1 expr2 = do
+  e1 <- evalExpr expr1 
+  e2 <- evalExpr expr2
+  case e1 of 
+    (VInt i1) -> do
+      case e2 of 
+        (VInt i2) -> return (i1, i2)
+        _ -> throwError $ errMessage line "second argument should be integer"
+    _ -> throwError $ errMessage line "first argument should be integer"
+
+evalTwoBoolExpr :: BNFC'Position -> Expr -> Expr -> IM (Bool, Bool)
+evalTwoBoolExpr line expr1 expr2 = do
+  e1 <- evalExpr expr1 
+  e2 <- evalExpr expr2
+  case e1 of 
+    (VBool b1) -> do
+      case e2 of 
+        (VBool b2) -> return (b1, b2)
+        _ -> throwError $ errMessage line "second argument should be boolean"
+    _ -> throwError $ errMessage line "first argument should be boolean"
+
+evalOneIntExpr :: BNFC'Position -> Expr -> IM Integer
+evalOneIntExpr line expr1 = do
+  e1 <- evalExpr expr1
+  case e1 of 
+    (VInt i1) -> do
+      return i1
+    _ -> throwError $ errMessage line "argument should be integer"
+
+evalOneBoolExpr :: BNFC'Position -> Expr -> IM Bool
+evalOneBoolExpr line expr1 = do
+  e1 <- evalExpr expr1
+  case e1 of 
+    (VBool b1) -> do
+      return b1
+    _ -> throwError $ errMessage line "argument should be boolean"
 
 -- Evaluate Expr --
 
 evalExpr :: Expr -> IM Val
-evalExpr (EVar line id) = getIdentVal id
+evalExpr (EVar line id) = getIdentVal line id
 evalExpr (ELitInt line i) = return (VInt i)
-evalExpr (ELitTrue line)= return (VBool True)
+evalExpr (ELitTrue line) = return (VBool True)
 evalExpr (ELitFalse line) = return (VBool False)
 
 evalExpr (EApp line id exprs) = do
-  (VFunc t id args (Block line2 b)) <- getFunc id
-  env <- declFunctionArgs exprs args
+  (VFunc t id args (Block line2 b)) <- getFunc line id
+  env <- declFunctionArgs line exprs args
   retVal <- local (const env) $ execBlock b
   case retVal of
     (Return val, _) -> return val
-    _ -> throwError $ "Function " ++ show id ++ "didn't return anything"
+    _ -> throwError $ errMessage line $ "function " ++ show id ++ "didn't return anything"
 
 evalExpr (EString line s) = return (VString s)
-evalExpr (Neg line expr) = negVInt <$> evalExpr expr
-evalExpr (Not line expr) = notVBool <$> evalExpr expr
-evalExpr (EMul line expr1 op expr2) = mulVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EAdd line expr1 op expr2) = addVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EAnd line expr1 expr2) = andVBool <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (ERel line expr1 op expr2) = relVInt op <$> evalExpr expr1 <*> evalExpr expr2
-evalExpr (EOr line expr1 expr2) = orVBool <$> evalExpr expr1 <*> evalExpr expr2
+evalExpr (Neg line expr) = do
+  i <- evalOneIntExpr line expr
+  return $ negVInt (VInt i)
+evalExpr (Not line expr) = do
+  b <- evalOneBoolExpr line expr
+  return $ notVBool (VBool b)
+evalExpr (EMul line expr1 op expr2) = do
+  (i1, i2) <- evalTwoIntExpr line expr1 expr2
+  return $ mulVInt op (VInt i1) (VInt i2)
+evalExpr (EAdd line expr1 op expr2) = do
+  (i1, i2) <- evalTwoIntExpr line expr1 expr2
+  return $ addVInt op (VInt i1) (VInt i2)
+evalExpr (EAnd line expr1 expr2) = do
+  (b1, b2) <- evalTwoBoolExpr line expr1 expr2
+  return $ andVBool (VBool b1) (VBool b2)
+evalExpr (ERel line expr1 op expr2) = do
+  (i1, i2) <- evalTwoIntExpr line expr1 expr2
+  return $ relVInt op (VInt i1) (VInt i2)
+evalExpr (EOr line expr1 expr2) = do
+  (b1, b2) <- evalTwoBoolExpr line expr1 expr2
+  return $ orVBool (VBool b1) (VBool b2)
 
 -- Stmt --
 
@@ -287,24 +339,30 @@ execStmt (Decl line t items) = do
   return (ReturnNothing, env)
 execStmt (Ass line id expr) = do
   n <- evalExpr expr
-  l <- getIdentLoc id
+  l <- getIdentLoc line id
   env <- ask
   insertValue l n
   return (ReturnNothing, env)
 
 execStmt (Incr line id) = do
-  VInt v <- getIdentVal id
-  l <- getIdentLoc id
-  env <- ask
-  insertValue l (VInt $ v + 1)
-  return (ReturnNothing, env)
+  val <- getIdentVal line id
+  case val of 
+    (VInt v) -> do
+      l <- getIdentLoc line id
+      env <- ask
+      insertValue l (VInt $ v + 1)
+      return (ReturnNothing, env)
+    _ -> throwError $ errMessage line "argument should be integer"
 
 execStmt (Decr line id) = do
-  VInt v <- getIdentVal id
-  l <- getIdentLoc id
-  env <- ask
-  insertValue l (VInt $ v - 1)
-  return (ReturnNothing, env)
+  val <- getIdentVal line id
+  case val of 
+    (VInt v) -> do
+      l <- getIdentLoc line id
+      env <- ask
+      insertValue l (VInt $ v - 1)
+      return (ReturnNothing, env)
+    _ -> throwError $ errMessage line "argument should be integer"
 
 execStmt (Ret line expr) = do
   e <- evalExpr expr
@@ -313,19 +371,19 @@ execStmt (Ret line expr) = do
 execStmt (VRet line) = do
   env <- ask
   return (Return VVoid, env)
-execStmt (Cond line expr (Block line2 b)) = do
-  VBool c <- evalExpr expr
+execStmt (Cond line expr (Block line2 block)) = do
+  b <- evalOneBoolExpr line expr
   env <- ask
-  if c then do
-    (retVal, _) <- local (const env) $ execBlock b
+  if b then do
+    (retVal, _) <- local (const env) $ execBlock block
     return (retVal, env)
   else
     return (ReturnNothing, env)
 
 execStmt (CondElse line expr (Block line2 b1) (Block line3 b2)) = do
-  VBool c <- evalExpr expr
+  b <- evalOneBoolExpr line expr
   env <- ask
-  if c then do
+  if b then do
     (retVal, _) <- local (const env) $ execBlock b1
     return (retVal, env)
   else do
@@ -333,15 +391,15 @@ execStmt (CondElse line expr (Block line2 b1) (Block line3 b2)) = do
     return (retVal, env)
 
 
-execStmt (While line expr (Block line2 b)) = do
-  VBool c <- evalExpr expr
+execStmt (While line expr (Block line2 block)) = do
+  b <- evalOneBoolExpr line expr
   env <- ask
-  if c then do
-    (retVal, _) <- local (const env) $ execBlock b
+  if b then do
+    (retVal, _) <- local (const env) $ execBlock block
     case retVal of
       RBreak -> return (ReturnNothing, env)
       Return val -> return (Return val, env)
-      _ -> execStmt (While line expr (Block line2 b ))
+      _ -> execStmt (While line expr (Block line2 block))
   else
     return (ReturnNothing, env)
 
