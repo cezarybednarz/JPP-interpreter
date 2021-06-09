@@ -7,4 +7,5 @@ int main() {
   if(i == 10) {
     print("ok");
   }
+  return 0;
 }

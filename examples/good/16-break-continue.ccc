@@ -1,0 +1,27 @@
+
+int pierwsza(int n) {
+  boolean czy = true;
+  int i = 2;
+  while (i * i <= n) {
+    if (n % i == 0) {
+      czy = false;
+      break;
+    }
+    i++;
+    continue;
+    print("ZLE");
+  }
+  return czy;
+}
+
+int main() {
+  print("liczby pierwsze od 2 do 200:");
+  int i = 2;
+  while (i <= 200) {
+    if (pierwsza(i)) {
+      print(i);
+    }
+    i++;
+  }
+  return 0;
+}

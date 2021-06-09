@@ -1,0 +1,11 @@
+int add(int a, int b, int c) {
+  return a + b + c;
+}
+
+int main() {
+  if (add(1, 2, 3) == 6) {
+    print("OK");
+  }
+  return 0;
+} 
+

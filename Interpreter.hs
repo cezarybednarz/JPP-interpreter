@@ -307,7 +307,8 @@ execStmt (Cond expr (Block b)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
-    local (const env) $ execBlock b
+    (retVal, _) <- local (const env) $ execBlock b
+    return (retVal, env)
   else
     return (ReturnNothing, env)
 
@@ -315,9 +316,12 @@ execStmt (CondElse expr (Block b1) (Block b2)) = do
   VBool c <- evalExpr expr
   env <- ask
   if c then do
-    local (const env) $ execBlock b1
+    (retVal, _) <- local (const env) $ execBlock b1
+    return (retVal, env)
   else do
-    local (const env) $ execBlock b2
+    (retVal, _) <- local (const env) $ execBlock b2
+    return (retVal, env)
+  
 
 execStmt (While expr (Block b)) = do
   VBool c <- evalExpr expr

@@ -1,13 +1,18 @@
 int main() {
   int x = 1;
   if(true) {
-    x = 2;
+    int x = 2;
     if(x == 2) {
       print("OK");
+    } else {
+      print("NOT OK");
     }
   }
   if(x == 1) {
     print("OK");
+  } else {
+    print("NOT OK");
+    print(x);
   }
   return 0;
 }
